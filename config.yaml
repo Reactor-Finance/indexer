@@ -1,20 +1,30 @@
 # yaml-language-server: $schema=./node_modules/envio/evm.schema.json
-name: envio-indexer
+name: reactor-finance-metadex
 networks:
-- id: 10143
-  start_block: 0
-  contracts:
-  - name: PairFactory
-    address:
-    - 0x22595aA7f5298b49D62450DA6300882Fb3d98eBc
-    handler: src/EventHandlers.ts
-    events:
-    - event: PairCreated(address indexed token0, address indexed token1, bool stable, address pair, uint256 )
-  - name: RewardsDistributor
-    address:
-    - 0x38Fd3f88a46239D8CEcB768f8E7620d861D2DE13
-    handler: src/EventHandlers.ts
-    events:
-    - event: CheckpointToken(uint256 time, uint256 tokens)
-    - event: Claimed(uint256 tokenId, uint256 amount, uint256 claim_epoch, uint256 max_epoch)
+  - id: 10143
+    start_block: 0
+    contracts:
+      - name: PoolFactory
+        abi_file_path: abis/V2PoolFactory.json
+        address:
+          - 0x22595aA7f5298b49D62450DA6300882Fb3d98eBc
+        handler: src/handlers/base/V2PoolFactory
+        events:
+          - event: PoolCreated(address indexed token0, address indexed token1, bool indexed stable, address pool, uint256)
+      - name: Pool
+        abi_file_path: abis/V2Pool.json
+        handler: src/handlers/core/V2Pools
+        events:
+          - event: Swap(address indexed sender,address indexed to,uint256 amount0In,uint256 amount1In,uint256 amount0Out,uint256 amount1Out)
+      - name: CLFactory
+        address:
+          - 0x38Fd3f88a46239D8CEcB768f8E7620d861D2DE13
+        handler: src/handlers/base/CLFactory
+        events:
+          - event: PoolCreated(address indexed token0, address indexed token1, int24 indexed tickSpacing, address pool)
+      - name: CLPool
+        abi_file_path: abis/V3Pool.json
+        handler: src/handlers/core/V3Pools
+        events:
+          - event: Swap(address indexed sender,address indexed recipient,int256 amount0,int256 amount1,uint160 sqrtPriceX96,uint128 liquidity,int24 tick)
 unordered_multichain_mode: true

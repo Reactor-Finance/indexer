@@ -1,23 +1,225 @@
-type PairFactory_PairCreated {
-  id: ID!
-  token0: String!
-  token1: String!
-  stable: Boolean!
-  pair: String!
-  _4: BigInt!
+enum PoolType {
+  STABLE
+  VOLATILE
+  CONCENTRATED
 }
 
-type RewardsDistributor_CheckpointToken {
+type Statistics {
   id: ID!
-  time: BigInt!
-  tokens: BigInt!
+  txCount: BigInt!
+  totalPairsCreated: BigInt!
+  totalVolumeLockedUSD: BigDecimal!
 }
 
-type RewardsDistributor_Claimed {
+type Pool {
   id: ID!
-  tokenId: BigInt!
-  amount: BigInt!
-  claim_epoch: BigInt!
-  max_epoch: BigInt!
+  token0: Token!
+  token1: Token!
+  reserve0: BigDecimal!
+  reserve1: BigDecimal!
+  totalSupply: BigDecimal!
+  reserveETH: BigDecimal!
+  reserveUSD: BigDecimal!
+  token0Price: BigDecimal!
+  token1Price: BigDecimal!
+  volumeToken0: BigDecimal!
+  volumeToken1: BigDecimal!
+  volumeUSD: BigDecimal!
+  txCount: BigInt!
+  createdAtTimestamp: BigInt!
+  createdAtBlockNumber: BigInt!
+  poolHourData: [PoolHourData!]! @derivedFrom(field: "pool")
+  mints: [Mint!]! @derivedFrom(field: "pool")
+  burns: [Burn!]! @derivedFrom(field: "pool")
+  swaps: [Swap!]! @derivedFrom(field: "pool")
+  poolType: PoolType!
+  feesUSD: BigDecimal!
+  totalVotes: BigDecimal!
+  totalFeesUSD: BigDecimal!
+  totalBribesUSD: BigDecimal!
+  totalFees0: BigDecimal!
+  totalFees1: BigDecimal!
+  fees0CurrentEpoch: BigDecimal!
+  fees1CurrentEpoch: BigDecimal!
+  totalEmissions: BigDecimal!
+  totalEmissionsUSD: BigDecimal!
+  gauge: Gauge
+  liquidityManager: Bytes
+  tickSpacing: BigInt
 }
 
+type User {
+  id: ID!
+  address: Bytes! @index
+  gaugePositions: [GaugePosition!]! @derivedFrom(field: "account")
+  lpPositions: [LiquidityPosition!]! @derivedFrom(field: "account")
+}
+
+type Gauge {
+  id: ID!
+  address: Bytes! @index
+  depositPool: Pool! @index
+  rewardToken: Token! @index
+  totalSupply: BigDecimal!
+  feeVotingReward: Bytes!
+  bribeVotingReward: Bytes!
+  rewardRate: BigDecimal!
+  fees0: BigDecimal!
+  fees1: BigDecimal!
+  isAlive: Boolean!
+}
+
+type GaugePosition {
+  id: ID!
+  gauge: Gauge!
+  amountDeposited: BigDecimal!
+  account: User! @index
+  creationTransaction: Bytes!
+  creationBlock: BigInt!
+}
+
+type LiquidityPosition {
+  id: ID!
+  pool: Pool!
+  account: User! @index
+  creationBlock: BigInt!
+  creationTransaction: Bytes!
+}
+
+type Token {
+  id: ID!
+  address: Bytes! @index
+  symbol: String!
+  name: String!
+  decimals: Int!
+  tradeVolume: BigDecimal!
+  tradeVolumeUSD: BigDecimal!
+  txCount: BigInt!
+  totalLiquidity: BigDecimal!
+  totalLiquidityUSD: BigDecimal!
+  derivedETH: BigDecimal!
+  derivedUSD: BigDecimal!
+  chainId: Int!
+  basePools: [Pool!]! @derivedFrom(field: "token0")
+  quotePools: [Pool!]! @derivedFrom(field: "token1")
+}
+
+type Transaction {
+  id: ID! # txn hash
+  block: BigInt!
+  timestamp: BigInt!
+  mints: [Mint!]! @derivedFrom(field: "transaction")
+  burns: [Burn!]! @derivedFrom(field: "transaction")
+  swaps: [Swap!]! @derivedFrom(field: "transaction")
+}
+
+type Mint {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt! # need this to pull recent txns for specific token or Pool
+  pool: Pool!
+  to: Bytes!
+  liquidity: BigDecimal!
+  sender: Bytes
+  amount0: BigDecimal
+  amount1: BigDecimal
+  logIndex: BigInt
+  amountUSD: BigDecimal
+  feeTo: Bytes
+  feeLiquidity: BigDecimal
+}
+
+type Burn {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt! # need this to pull recent txns for specific token or Pool
+  pool: Pool!
+  liquidity: BigDecimal!
+  sender: Bytes
+  amount0: BigDecimal
+  amount1: BigDecimal
+  to: Bytes
+  logIndex: BigInt
+  amountUSD: BigDecimal
+  needsComplete: Boolean!
+  feeTo: Bytes
+  feeLiquidity: BigDecimal
+}
+
+type Swap {
+  id: ID!
+  transaction: Transaction!
+  timestamp: BigInt! # need this to pull recent txns for specific token or Pool
+  pool: Pool!
+  sender: Bytes!
+  from: Bytes! # the EOA that initiated the txn
+  amount0In: BigDecimal!
+  amount1In: BigDecimal!
+  amount0Out: BigDecimal!
+  amount1Out: BigDecimal!
+  to: Bytes!
+  logIndex: BigInt
+  amountUSD: BigDecimal!
+}
+
+type Bundle {
+  id: ID!
+  ethPrice: BigDecimal! # price of ETH usd
+}
+
+type OverallDayData {
+  id: ID!
+  date: Int!
+  dailyVolumeETH: BigDecimal!
+  dailyVolumeUSD: BigDecimal!
+  totalVolumeETH: BigDecimal!
+  totalLiquidityETH: BigDecimal!
+  totalVolumeUSD: BigDecimal!
+  totalLiquidityUSD: BigDecimal!
+  txCount: BigInt!
+  feesUSD: BigDecimal!
+}
+
+type PoolHourData {
+  id: ID!
+  hourStartUnix: Int!
+  pool: Pool!
+  reserve0: BigDecimal!
+  reserve1: BigDecimal!
+  totalSupply: BigDecimal!
+  reserveUSD: BigDecimal!
+  hourlyVolumeToken0: BigDecimal!
+  hourlyVolumeToken1: BigDecimal!
+  hourlyVolumeUSD: BigDecimal!
+  hourlyTxns: BigInt!
+}
+
+type PoolDayData {
+  id: ID!
+  date: Int!
+  pool: Pool!
+  token0: Token!
+  token1: Token!
+  reserve0: BigDecimal!
+  reserve1: BigDecimal!
+  totalSupply: BigDecimal!
+  reserveUSD: BigDecimal!
+  dailyVolumeToken0: BigDecimal!
+  dailyVolumeToken1: BigDecimal!
+  dailyVolumeUSD: BigDecimal!
+  dailyTxns: BigInt!
+}
+
+type TokenDayData {
+  id: ID!
+  date: Int!
+  token: Token!
+  dailyVolumeToken: BigDecimal!
+  dailyVolumeETH: BigDecimal!
+  dailyVolumeUSD: BigDecimal!
+  dailyTxns: BigInt!
+  totalLiquidityToken: BigDecimal!
+  totalLiquidityETH: BigDecimal!
+  totalLiquidityUSD: BigDecimal!
+  priceUSD: BigDecimal!
+}

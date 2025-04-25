@@ -3,6 +3,7 @@ import { getAddress } from 'viem';
 import { loadTokenDetails } from '../../utils/loaders';
 import { BD_ZERO, BI_ZERO } from '../../utils/constants';
 import { Pool } from 'generated/src/Types.gen';
+import { ERC20 } from '../../utils/onchain/erc20';
 
 PoolFactory.PoolCreated.contractRegister(
   ({ event, context }) => {
@@ -71,8 +72,18 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
 
     context.Token.set(token1);
   }
+  // Bind pool contract
+  const poolContract = ERC20.init(event.chainId, getAddress(id));
+  // Fetch pool name
+  const name = await poolContract.name();
+  // Must pass
+  if (!name) {
+    context.log.error(`Could not fetch token name for ${id}`);
+    return;
+  }
   const pool: Pool = {
     id,
+    name,
     token0_id: token0.id,
     token1_id: token1.id,
     createdAtBlockNumber: BigInt(event.block.number),

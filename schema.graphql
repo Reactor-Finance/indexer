@@ -13,6 +13,7 @@ type Statistics {
 
 type Pool {
   id: ID!
+  name: String!
   token0: Token!
   token1: Token!
   reserve0: BigDecimal!

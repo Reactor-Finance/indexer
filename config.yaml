@@ -16,6 +16,10 @@ networks:
         handler: src/handlers/core/V2Pools
         events:
           - event: Swap(address indexed sender,address indexed to,uint256 amount0In,uint256 amount1In,uint256 amount0Out,uint256 amount1Out)
+          - event: Sync(uint256 reserve0, uint256 reserve1)
+          - event: Burn(address indexed sender, address indexed to, uint256 amount0, uint256 amount1)
+          - event: Mint(address indexed sender, uint256 amount0, uint256 amount1)
+          - event: Fees(address indexed sender, uint256 amount0, uint256 amount1)
       - name: CLFactory
         address:
           - 0x38Fd3f88a46239D8CEcB768f8E7620d861D2DE13
@@ -28,3 +32,9 @@ networks:
         events:
           - event: Swap(address indexed sender,address indexed recipient,int256 amount0,int256 amount1,uint160 sqrtPriceX96,uint128 liquidity,int24 tick)
 unordered_multichain_mode: true
+field_selection:
+  transaction_fields:
+    - hash
+    - from
+    - to
+    - transactionIndex

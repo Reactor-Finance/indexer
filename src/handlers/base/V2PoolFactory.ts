@@ -13,12 +13,13 @@ PoolFactory.PoolCreated.contractRegister(
 );
 
 PoolFactory.PoolCreated.handler(async ({ event, context }) => {
-  const id = event.params.pool;
+  const id = getAddress(event.params.pool);
   const token0Id = getAddress(event.params.token0);
   const token1Id = getAddress(event.params.token1);
   let token0 = await context.Token.get(token0Id);
   let token1 = await context.Token.get(token1Id);
   let statistics = await context.Statistics.get('1');
+  let bundle = await context.Bundle.get('1');
 
   if (!statistics) {
     statistics = {
@@ -26,6 +27,17 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
       totalPairsCreated: 0n,
       totalVolumeLockedUSD: BD_ZERO,
       txCount: BI_ZERO,
+      totalVolumeLockedETH: BD_ZERO,
+      totalTradeVolumeUSD: BD_ZERO,
+      totalTradeVolumeETH: BD_ZERO,
+      totalFeesUSD: BD_ZERO,
+    };
+  }
+
+  if (!bundle) {
+    bundle = {
+      id: '1',
+      ethPrice: BD_ZERO,
     };
   }
 
@@ -122,4 +134,5 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
 
   context.Pool.set(pool);
   context.Statistics.set(statistics);
+  context.Bundle.set(bundle);
 });

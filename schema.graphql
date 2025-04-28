@@ -9,6 +9,10 @@ type Statistics {
   txCount: BigInt!
   totalPairsCreated: BigInt!
   totalVolumeLockedUSD: BigDecimal!
+  totalVolumeLockedETH: BigDecimal!
+  totalFeesUSD: BigDecimal!
+  totalTradeVolumeUSD: BigDecimal!
+  totalTradeVolumeETH: BigDecimal!
 }
 
 type Pool {
@@ -170,15 +174,15 @@ type Bundle {
 
 type OverallDayData {
   id: ID!
-  date: Int!
-  dailyVolumeETH: BigDecimal!
-  dailyVolumeUSD: BigDecimal!
-  totalVolumeETH: BigDecimal!
-  totalLiquidityETH: BigDecimal!
-  totalVolumeUSD: BigDecimal!
-  totalLiquidityUSD: BigDecimal!
+  date: Int! @index
+  volumeETH: BigDecimal!
+  volumeUSD: BigDecimal!
+  liquidityETH: BigDecimal!
+  liquidityUSD: BigDecimal!
   txCount: BigInt!
   feesUSD: BigDecimal!
+  totalTradeVolumeETH: BigDecimal!
+  totalTradeVolumeUSD: BigDecimal!
 }
 
 type PoolHourData {

@@ -408,7 +408,33 @@ Pool.Burn.handlerWithLoader({
   },
 });
 
-Pool.Fees.handler(async ({ event, context }) => {});
+Pool.Fees.handler(async ({ event, context }) => {
+  const poolId = getAddress(event.srcAddress);
+  let pool = (await context.Pool.get(poolId)) as Pool_t;
+  let token0 = (await context.Token.get(pool.token0_id)) as Token_t;
+  let token1 = (await context.Token.get(pool.token1_id)) as Token_t;
+  let statistics = (await context.Statistics.get('1')) as Statistics_t;
+
+  token0 = await loadTokenPrices(context, token0, event.chainId);
+  token1 = await loadTokenPrices(context, token1, event.chainId);
+
+  const amountO = divideByBase(event.params.amount0, token0.decimals);
+  const amount1 = divideByBase(event.params.amount1, token1.decimals);
+  const amountUSD = amountO.times(token0.derivedUSD).plus(amount1.times(token1.derivedUSD));
+  pool = {
+    ...pool,
+    totalFees0: pool.totalFees0.plus(amountO),
+    totalFees1: pool.totalFees0.plus(amount1),
+    totalFeesUSD: pool.totalFeesUSD.plus(amountUSD),
+  };
+  context.Pool.set(pool);
+
+  statistics = {
+    ...statistics,
+    totalFeesUSD: statistics.totalFeesUSD.plus(amountUSD),
+  };
+  context.Statistics.set(statistics);
+});
 
 Pool.Transfer.handlerWithLoader({
   loader: async ({ event, context }) => {

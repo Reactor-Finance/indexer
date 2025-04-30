@@ -31,6 +31,7 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
       totalTradeVolumeUSD: BD_ZERO,
       totalTradeVolumeETH: BD_ZERO,
       totalFeesUSD: BD_ZERO,
+      totalBribesUSD: BD_ZERO,
     };
   }
 
@@ -102,9 +103,9 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
     token1_id: token1.id,
     createdAtBlockNumber: BigInt(event.block.number),
     createdAtTimestamp: BigInt(event.block.timestamp),
-    fees0CurrentEpoch: BD_ZERO,
-    fees1CurrentEpoch: BD_ZERO,
-    feesUSD: BD_ZERO,
+    gaugeFees0CurrentEpoch: BD_ZERO,
+    gaugeFees1CurrentEpoch: BD_ZERO,
+    gaugeFeesUSD: BD_ZERO,
     totalFees0: BD_ZERO,
     totalFees1: BD_ZERO,
     totalFeesUSD: BD_ZERO,

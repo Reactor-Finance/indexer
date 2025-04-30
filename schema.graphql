@@ -11,6 +11,7 @@ type Statistics {
   totalVolumeLockedUSD: BigDecimal! @config(precision: 5, scale: 2)
   totalVolumeLockedETH: BigDecimal! @config(precision: 5, scale: 2)
   totalFeesUSD: BigDecimal! @config(precision: 5, scale: 2)
+  totalBribesUSD: BigDecimal! @config(precision: 5, scale: 2)
   totalTradeVolumeUSD: BigDecimal! @config(precision: 5, scale: 2)
   totalTradeVolumeETH: BigDecimal! @config(precision: 5, scale: 2)
 }
@@ -39,14 +40,14 @@ type Pool {
   burns: [Burn!]! @derivedFrom(field: "pool")
   swaps: [Swap!]! @derivedFrom(field: "pool")
   poolType: PoolType!
-  feesUSD: BigDecimal! @config(precision: 5, scale: 2)
+  gaugeFeesUSD: BigDecimal! @config(precision: 5, scale: 2)
   totalVotes: BigDecimal! @config(precision: 5, scale: 2)
   totalFeesUSD: BigDecimal! @config(precision: 5, scale: 2)
   totalBribesUSD: BigDecimal! @config(precision: 5, scale: 2)
   totalFees0: BigDecimal! @config(precision: 5, scale: 2)
   totalFees1: BigDecimal! @config(precision: 5, scale: 2)
-  fees0CurrentEpoch: BigDecimal! @config(precision: 5, scale: 2)
-  fees1CurrentEpoch: BigDecimal! @config(precision: 5, scale: 2)
+  gaugeFees0CurrentEpoch: BigDecimal! @config(precision: 5, scale: 2)
+  gaugeFees1CurrentEpoch: BigDecimal! @config(precision: 5, scale: 2)
   totalEmissions: BigDecimal! @config(precision: 5, scale: 2)
   totalEmissionsUSD: BigDecimal! @config(precision: 5, scale: 2)
   gauge: Gauge
@@ -73,6 +74,7 @@ type Gauge {
   fees0: BigDecimal! @config(precision: 5, scale: 2)
   fees1: BigDecimal! @config(precision: 5, scale: 2)
   isAlive: Boolean!
+  emission: BigDecimal! @config(precision: 5, scale: 2)
 }
 
 type GaugePosition {

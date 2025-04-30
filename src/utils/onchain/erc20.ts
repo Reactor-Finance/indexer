@@ -47,4 +47,12 @@ export class ERC20 {
       return null;
     }
   }
+
+  async balanceOf(address: Address): Promise<bigint | null> {
+    try {
+      return this.contract.read.balanceOf([address]);
+    } catch (error: any) {
+      return null;
+    }
+  }
 }

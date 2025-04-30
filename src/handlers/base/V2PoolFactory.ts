@@ -58,6 +58,7 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
       txCount: BI_ZERO,
       tradeVolume: BD_ZERO,
       tradeVolumeUSD: BD_ZERO,
+      totalLiquidityETH: BD_ZERO,
     };
 
     context.Token.set(token0);
@@ -80,6 +81,7 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
       txCount: BI_ZERO,
       tradeVolume: BD_ZERO,
       tradeVolumeUSD: BD_ZERO,
+      totalLiquidityETH: BD_ZERO,
     };
 
     context.Token.set(token1);
@@ -122,6 +124,7 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
     volumeToken0: BD_ZERO,
     volumeToken1: BD_ZERO,
     volumeUSD: BD_ZERO,
+    volumeETH: BD_ZERO,
     gauge_id: undefined,
     tickSpacing: undefined,
     liquidityManager: undefined,

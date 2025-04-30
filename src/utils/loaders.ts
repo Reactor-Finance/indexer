@@ -1,7 +1,10 @@
 import { getAddress } from 'viem';
 import { Cache, CacheCategory } from './cache';
-import { Chains } from './constants';
+import { Chains, WETH } from './constants';
 import { ERC20 } from './onchain/erc20';
+import { Bundle, handlerContext, Token } from 'generated';
+import { Oracle } from './onchain/oracle';
+import { divideByBase } from './math';
 
 export async function loadTokenDetails(address: string, chainId: number = Chains.MON_TESTNET) {
   try {
@@ -34,4 +37,34 @@ export async function loadTokenDetails(address: string, chainId: number = Chains
   } catch (error: any) {
     return null;
   }
+}
+
+export async function loadTokenPrices(context: handlerContext, token: Token, chainId: number = Chains.MON_TESTNET) {
+  // Load oracle
+  const oracle = Oracle.init(chainId);
+  // Token address checksumed
+  const viemCompliantAddress = getAddress(token.address);
+  // prices
+  const bundle = (await context.Bundle.get('1')) as Bundle;
+  const eth = await oracle.getPriceETH(viemCompliantAddress, token.decimals);
+  // Mutate
+  const newToken = {
+    ...token,
+    derivedUSD: eth !== null ? bundle.ethPrice.multipliedBy(divideByBase(eth)) : token.derivedUSD,
+    derivedETH: eth !== null ? divideByBase(eth) : token.derivedETH,
+  };
+  context.Token.set(newToken);
+  return context.Token.get(token.id) as Promise<Token>;
+}
+
+export async function loadBundlePrice(context: handlerContext, chainId: Chains = Chains.MON_TESTNET) {
+  // Load oracle
+  const oracle = Oracle.init(chainId);
+  // Token address checksumed
+  const viemCompliantAddress = getAddress(WETH[chainId]);
+  const usd = await oracle.getPriceUSD(viemCompliantAddress, 18);
+  let bundle = (await context.Bundle.get('1')) as Bundle;
+  bundle = { ...bundle, ethPrice: usd !== null ? divideByBase(usd) : bundle.ethPrice };
+  context.Bundle.set(bundle);
+  return context.Bundle.get(bundle.id) as Promise<Bundle>;
 }

@@ -21,3 +21,8 @@ export const RPC_URLS: { [key in Chains]: string } = {
 export const ORACLES: { [key in Chains]: `0x${string}` } = {
   [Chains.MON_TESTNET]: '0xf9e1b7c5c7830fc5aa4370c9286cbb4dd74b6b62',
 };
+
+// WETH
+export const WETH: { [key in Chains]: `0x${string}` } = {
+  [Chains.MON_TESTNET]: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701',
+};

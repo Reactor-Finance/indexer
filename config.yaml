@@ -21,6 +21,7 @@ networks:
           - event: Mint(address indexed sender, uint256 amount0, uint256 amount1)
           - event: Fees(address indexed sender, uint256 amount0, uint256 amount1)
           - event: Transfer(address indexed from, address indexed to, uint256 value)
+          - event: Claim(address indexed sender, address indexed recipient, uint256 amount0, uint256 amount1)
       - name: CLFactory
         address:
           - 0x38Fd3f88a46239D8CEcB768f8E7620d861D2DE13
@@ -31,7 +32,11 @@ networks:
         abi_file_path: abis/V3Pool.json
         handler: src/handlers/core/V3Pools
         events:
-          - event: Swap(address indexed sender,address indexed recipient,int256 amount0,int256 amount1,uint160 sqrtPriceX96,uint128 liquidity,int24 tick)
+          - event: Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)
+          - event: Mint(address sender, address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)
+          - event: CollectFees(address indexed recipient, uint128 amount0, uint128 amount1)
+          - event: Collect(address indexed owner, address recipient, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount0, uint128 amount1)
+          - event: Burn(address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)
 unordered_multichain_mode: true
 field_selection:
   transaction_fields:

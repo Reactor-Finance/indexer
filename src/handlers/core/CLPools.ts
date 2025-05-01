@@ -1,4 +1,4 @@
-import { Bundle, Burn, Mint, Pool, Statistics, Swap } from 'generated';
+import { Bundle, Burn, CLPool, Mint, Pool, Statistics, Swap } from 'generated';
 import { Pool_t, Statistics_t, Token_t } from 'generated/src/db/Entities.gen';
 import { getAddress, toHex, zeroAddress } from 'viem';
 import { divideByBase } from '../../utils/math';
@@ -11,9 +11,9 @@ import {
   updateTokenDayData,
 } from '../../utils/mutations';
 import { ERC20 } from '../../utils/onchain/erc20';
-import { BD_ZERO } from '../../utils/constants';
+import { BD_ONE, BD_ZERO } from '../../utils/constants';
 
-Pool.Swap.handlerWithLoader({
+CLPool.Swap.handlerWithLoader({
   loader: async ({ event, context }) => {
     const txId = event.transaction.hash;
     const swaps = await context.Swap.getWhere.transaction_id.eq(txId);
@@ -34,31 +34,47 @@ Pool.Swap.handlerWithLoader({
     token0 = await loadTokenPrices(context, token0, event.chainId);
     token1 = await loadTokenPrices(context, token1, event.chainId);
 
-    const amount0In = divideByBase(event.params.amount0In, token0.decimals);
-    const amount1In = divideByBase(event.params.amount1In, token1.decimals);
-    const amount0Out = divideByBase(event.params.amount0Out, token0.decimals);
-    const amount1Out = divideByBase(event.params.amount1Out, token1.decimals);
-    const amount0Total = amount0In.plus(amount0Out);
-    const amount1Total = amount1In.plus(amount1Out);
-    const amount0ETH = amount0Total.multipliedBy(token0.derivedETH);
-    const amount0USD = amount0Total.multipliedBy(token0.derivedUSD);
-    const amount1ETH = amount1Total.multipliedBy(token1.derivedETH);
-    const amount1USD = amount1Total.multipliedBy(token1.derivedUSD);
+    // Balances before swap
+    let reserve0 = pool.reserve0;
+    let reserve1 = pool.reserve0;
+    const isToken0Out = event.params.amount0 < 0n; // First token was sent out
+    const amount0 = divideByBase(event.params.amount0, token0.decimals);
+    const amount1 = divideByBase(event.params.amount1, token1.decimals);
+    const amount0ETH = amount0.multipliedBy(token0.derivedETH);
+    const amount0USD = amount0.multipliedBy(token0.derivedUSD);
+    const amount1ETH = amount1.multipliedBy(token1.derivedETH);
+    const amount1USD = amount1.multipliedBy(token1.derivedUSD);
+
+    // After swap
+    reserve0 = reserve0.plus(amount0);
+    reserve1 = reserve1.plus(amount1);
+
+    const reserveETH = reserve0.multipliedBy(token0.derivedETH);
+    const reserveUSD = reserve0.multipliedBy(token0.derivedUSD);
+
+    const amount0In = isToken0Out ? BD_ZERO : amount0;
+    const amount1In = isToken0Out ? amount1 : BD_ZERO;
+    const amount0Out = isToken0Out ? amount0.abs() : BD_ZERO;
+    const amount1Out = isToken0Out ? BD_ZERO : amount1.abs();
 
     pool = {
       ...pool,
       volumeETH: pool.volumeETH.plus(amount0ETH).plus(amount1ETH),
       volumeUSD: pool.volumeUSD.plus(amount0USD).plus(amount1USD),
-      volumeToken0: pool.volumeToken0.plus(amount0Total),
-      volumeToken1: pool.volumeToken1.plus(amount1Total),
+      volumeToken0: pool.volumeToken0.plus(amount0),
+      volumeToken1: pool.volumeToken1.plus(amount1),
       txCount: pool.txCount + 1n,
+      reserve0,
+      reserve1,
+      reserveETH,
+      reserveUSD,
     };
 
     context.Pool.set(pool);
 
     token0 = {
       ...token0,
-      tradeVolume: amount0Total.plus(token0.tradeVolume),
+      tradeVolume: amount0.plus(token0.tradeVolume),
       tradeVolumeUSD: amount0USD.plus(token0.tradeVolumeUSD),
       txCount: token0.txCount + 1n,
     };
@@ -67,7 +83,7 @@ Pool.Swap.handlerWithLoader({
 
     token1 = {
       ...token1,
-      tradeVolume: amount1Total.plus(token1.tradeVolume),
+      tradeVolume: amount1.plus(token1.tradeVolume),
       tradeVolumeUSD: amount1USD.plus(token1.tradeVolumeUSD),
       txCount: token1.txCount + 1n,
     };
@@ -96,7 +112,7 @@ Pool.Swap.handlerWithLoader({
       pool_id: pool.id,
       sender: event.params.sender,
       from: event.transaction.from ? event.transaction.from : event.params.sender,
-      to: event.params.to,
+      to: event.params.recipient,
       amount0In,
       amount1In,
       amount0Out,
@@ -122,16 +138,16 @@ Pool.Swap.handlerWithLoader({
       blockTimestamp: event.block.timestamp,
       token0,
       token1,
-      amount0: amount0Total,
-      amount1: amount1Total,
+      amount0,
+      amount1,
     });
 
     // Update pool hourly data
     updatePoolHourlyData(context, {
       pool,
       blockTimestamp: event.block.timestamp,
-      amount0: amount0Total,
-      amount1: amount1Total,
+      amount0,
+      amount1,
       token0,
       token1,
     });
@@ -142,17 +158,17 @@ Pool.Swap.handlerWithLoader({
       pool,
       token0,
       token1,
-      amount0: amount0Total,
-      amount1: amount1Total,
+      amount0,
+      amount1,
     });
 
     // Update token day data
-    updateTokenDayData(context, { blockTimestamp: event.block.timestamp, token: token0, amount: amount0Total });
-    updateTokenDayData(context, { blockTimestamp: event.block.timestamp, token: token1, amount: amount1Total });
+    updateTokenDayData(context, { blockTimestamp: event.block.timestamp, token: token0, amount: amount0 });
+    updateTokenDayData(context, { blockTimestamp: event.block.timestamp, token: token1, amount: amount1 });
   },
 });
 
-Pool.Mint.handlerWithLoader({
+CLPool.Mint.handlerWithLoader({
   loader: async ({ event, context }) => {
     const txId = event.transaction.hash;
     const mints = await context.Mint.getWhere.transaction_id.eq(txId);

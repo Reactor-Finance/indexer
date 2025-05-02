@@ -475,7 +475,7 @@ Pool.Claim.handler(async ({ event, context }) => {
 
   statistics = {
     ...statistics,
-    totalFeesUSD: statistics.totalFeesUSD.plus(amountUSD),
+    totalFeesUSD: statistics.totalFeesUSD.minus(amountUSD),
   };
   context.Statistics.set(statistics);
 });

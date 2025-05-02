@@ -169,7 +169,7 @@ CLPool.Swap.handlerWithLoader({
 });
 
 CLPool.Mint.handlerWithLoader({
-  loader: async ({ event, context }) => {
+  loader: async ({ context, event }) => {
     const txId = event.transaction.hash;
     const mints = await context.Mint.getWhere.transaction_id.eq(txId);
     return { mints };
@@ -195,17 +195,35 @@ CLPool.Mint.handlerWithLoader({
     const amount1 = divideByBase(event.params.amount1, token1.decimals);
     const amount0USD = amount0.multipliedBy(token0.derivedUSD);
     const amount1USD = amount1.multipliedBy(token1.derivedUSD);
+    const liquidity = divideByBase(event.params.amount);
 
-    token0 = { ...token0, txCount: token0.txCount + 1n };
+    token0 = {
+      ...token0,
+      txCount: token0.txCount + 1n,
+      totalLiquidity: token0.totalLiquidity.plus(amount0),
+      totalLiquidityUSD: token0.totalLiquidityUSD.plus(amount0USD),
+      totalLiquidityETH: token0.totalLiquidityETH.plus(amount0.times(token0.derivedETH)),
+    };
     context.Token.set(token0);
 
-    token1 = { ...token1, txCount: token1.txCount + 1n };
+    token1 = {
+      ...token1,
+      txCount: token1.txCount + 1n,
+      totalLiquidity: token1.totalLiquidity.plus(amount1),
+      totalLiquidityUSD: token1.totalLiquidityUSD.plus(amount1USD),
+      totalLiquidityETH: token1.totalLiquidityETH.plus(amount1.times(token1.derivedETH)),
+    };
     context.Token.set(token1);
 
     statistics = { ...statistics, txCount: statistics.txCount + 1n };
     context.Statistics.set(statistics);
 
-    pool = { ...pool, txCount: pool.txCount + 1n };
+    const reserve0 = pool.reserve0.plus(amount0);
+    const reserve1 = pool.reserve1.plus(amount1);
+    const reserveUSD = pool.reserveUSD.plus(amount0USD).plus(amount1USD);
+    const reserveETH = pool.reserveETH.plus(reserve0.times(token0.derivedETH)).plus(reserve1.times(token1.derivedETH));
+    const totalSupply = pool.totalSupply.plus(liquidity);
+    pool = { ...pool, txCount: pool.txCount + 1n, reserve0, reserve1, reserveETH, reserveUSD, totalSupply };
     context.Pool.set(pool);
 
     // Transaction
@@ -223,14 +241,21 @@ CLPool.Mint.handlerWithLoader({
     }
 
     const { mints } = loaderReturn;
-    let mint = mints[mints.length - 1];
-    mint = {
-      ...mint,
+    const mintId = transaction.id + ':' + toHex(mints.length);
+    const mint: Mint = {
+      id: mintId,
+      transaction_id: transaction.id,
       amount0,
       amount1,
       sender: event.params.sender,
       amountUSD: amount0USD.plus(amount1USD),
       logIndex: BigInt(event.logIndex),
+      feeLiquidity: undefined,
+      feeTo: undefined,
+      liquidity,
+      pool_id: pool.id,
+      timestamp: BigInt(event.block.timestamp),
+      to: event.params.owner,
     };
 
     context.Mint.set(mint);
@@ -270,93 +295,13 @@ CLPool.Mint.handlerWithLoader({
   },
 });
 
-Pool.Sync.handler(async ({ event, context }) => {
-  const poolId = getAddress(event.srcAddress);
-  let pool = (await context.Pool.get(poolId)) as Pool_t;
-  let token0 = (await context.Token.get(pool.token0_id)) as Token_t;
-  let token1 = (await context.Token.get(pool.token1_id)) as Token_t;
-  let statistics = (await context.Statistics.get('1')) as Statistics_t;
-
-  statistics = { ...statistics, totalVolumeLockedETH: statistics.totalVolumeLockedETH.minus(pool.reserveETH) };
-  token0 = { ...token0, totalLiquidity: token0.totalLiquidity.minus(pool.reserve0) };
-  token1 = { ...token1, totalLiquidity: token1.totalLiquidity.minus(pool.reserve1) };
-  pool = {
-    ...pool,
-    reserve0: divideByBase(event.params.reserve0, token0.decimals),
-    reserve1: divideByBase(event.params.reserve1, token1.decimals),
-  };
-
-  if (!pool.reserve1.isZero())
-    pool = {
-      ...pool,
-      token0Price: pool.reserve0.dividedBy(pool.reserve1),
-    };
-  else
-    pool = {
-      ...pool,
-      token0Price: BD_ZERO,
-    };
-
-  if (!pool.reserve0.isZero())
-    pool = {
-      ...pool,
-      token1Price: pool.reserve1.dividedBy(pool.reserve0),
-    };
-  else
-    pool = {
-      ...pool,
-      token1Price: BD_ZERO,
-    };
-
-  const bundle = (await loadBundlePrice(context, event.chainId)) as Bundle;
-  token0 = await loadTokenPrices(context, token0, event.chainId);
-  token1 = await loadTokenPrices(context, token1, event.chainId);
-  pool = {
-    ...pool,
-    reserveETH: pool.reserve0.times(token0.derivedETH).plus(pool.reserve1.times(token1.derivedETH)),
-    reserveUSD: pool.reserve0.times(token0.derivedUSD).plus(pool.reserve1.times(token1.derivedUSD)),
-  };
-
-  const totalVolumeLockedETH = statistics.totalVolumeLockedETH.plus(pool.reserveETH);
-  statistics = {
-    ...statistics,
-    totalVolumeLockedETH,
-    totalVolumeLockedUSD: totalVolumeLockedETH.times(bundle.ethPrice),
-  };
-
-  const totalLiquidity0 = token0.totalLiquidity.plus(pool.reserve0);
-  const totalLiquidity1 = token1.totalLiquidity.plus(pool.reserve1);
-
-  token0 = {
-    ...token0,
-    totalLiquidity: totalLiquidity0,
-    totalLiquidityETH: totalLiquidity0.times(token0.derivedETH),
-    totalLiquidityUSD: totalLiquidity0.times(token0.derivedUSD),
-  };
-  token1 = {
-    ...token1,
-    totalLiquidity: totalLiquidity1,
-    totalLiquidityETH: totalLiquidity1.times(token1.derivedETH),
-    totalLiquidityUSD: totalLiquidity1.times(token1.derivedUSD),
-  };
-
-  context.Pool.set(pool);
-  context.Statistics.set(statistics);
-  context.Token.set(token0);
-  context.Token.set(token1);
-});
-
-Pool.Burn.handlerWithLoader({
+CLPool.Burn.handlerWithLoader({
   loader: async ({ event, context }) => {
     const txId = event.transaction.hash;
     const burns = await context.Burn.getWhere.transaction_id.eq(txId);
     return { burns };
   },
   handler: async ({ event, context, loaderReturn }) => {
-    const { burns } = loaderReturn;
-    if (!burns.length) return; // Must contain burn
-
-    let burn = burns[burns.length - 1];
     const poolId = getAddress(event.srcAddress);
     let pool = (await context.Pool.get(poolId)) as Pool_t;
     let statistics = (await context.Statistics.get('1')) as Statistics_t;
@@ -365,27 +310,76 @@ Pool.Burn.handlerWithLoader({
 
     const token0Amount = divideByBase(event.params.amount0, token0.decimals);
     const token1Amount = divideByBase(event.params.amount1, token1.decimals);
+    const liquidity = divideByBase(event.params.amount);
 
-    token0 = { ...token0, txCount: token0.txCount + 1n };
-    token1 = { ...token1, txCount: token1.txCount + 1n };
+    token0 = {
+      ...token0,
+      txCount: token0.txCount + 1n,
+      totalLiquidity: token0.totalLiquidity.minus(token0Amount),
+      totalLiquidityUSD: token0.totalLiquidityUSD.plus(token0Amount.times(token0.derivedUSD)),
+      totalLiquidityETH: token1.totalLiquidityETH.plus(token0Amount.times(token0.derivedETH)),
+    };
+    token1 = {
+      ...token1,
+      txCount: token1.txCount + 1n,
+      totalLiquidity: token1.totalLiquidity.minus(token1Amount),
+      totalLiquidityUSD: token1.totalLiquidityUSD.plus(token1Amount.times(token1.derivedUSD)),
+      totalLiquidityETH: token1.totalLiquidityETH.plus(token1Amount.times(token1.derivedETH)),
+    };
 
     const amountTotalUSD = token0Amount.times(token0.derivedUSD).plus(token1Amount.times(token1.derivedUSD));
-    statistics = { ...statistics, txCount: statistics.txCount + 1n };
-    pool = { ...pool, txCount: pool.txCount + 1n };
+    const amountTotalETH = token0Amount.times(token0.derivedETH).plus(token1Amount.times(token1.derivedETH));
+
+    const reserve0 = pool.reserve0.minus(token0Amount);
+    const reserve1 = pool.reserve1.minus(token1Amount);
+    const reserveETH = pool.reserveETH.minus(amountTotalETH);
+    const reserveUSD = pool.reserveUSD.minus(amountTotalUSD);
+    const totalSupply = pool.totalSupply.minus(liquidity);
+    statistics = {
+      ...statistics,
+      txCount: statistics.txCount + 1n,
+      totalVolumeLockedETH: statistics.totalVolumeLockedETH.minus(amountTotalETH),
+      totalVolumeLockedUSD: statistics.totalVolumeLockedUSD.minus(amountTotalUSD),
+    };
+    pool = { ...pool, txCount: pool.txCount + 1n, reserve0, reserve1, reserveETH, reserveUSD, totalSupply };
 
     context.Token.set(token0);
     context.Token.set(token1);
     context.Pool.set(pool);
     context.Statistics.set(statistics);
 
-    burn = {
-      ...burn,
+    // Transaction
+    const txId = event.transaction.hash;
+    let transaction = await context.Transaction.get(txId);
+
+    if (!transaction) {
+      transaction = {
+        id: txId,
+        block: BigInt(event.block.number),
+        timestamp: BigInt(event.block.timestamp),
+      };
+
+      context.Transaction.set(transaction);
+    }
+
+    const { burns } = loaderReturn;
+    const burnId = txId + ':' + toHex(burns.length);
+
+    const burn: Burn = {
+      id: burnId,
       amount0: token0Amount,
       amount1: token1Amount,
-      sender: event.params.sender,
-      to: event.params.to,
+      sender: undefined,
+      to: event.params.owner,
       amountUSD: amountTotalUSD,
       logIndex: BigInt(event.logIndex),
+      feeLiquidity: undefined,
+      feeTo: undefined,
+      needsComplete: false,
+      liquidity,
+      pool_id: pool.id,
+      transaction_id: transaction.id,
+      timestamp: BigInt(event.block.timestamp),
     };
     context.Burn.set(burn);
 
@@ -424,7 +418,7 @@ Pool.Burn.handlerWithLoader({
   },
 });
 
-Pool.Fees.handler(async ({ event, context }) => {
+CLPool.Collect.handler(async ({ event, context }) => {
   const poolId = getAddress(event.srcAddress);
   let pool = (await context.Pool.get(poolId)) as Pool_t;
   let token0 = (await context.Token.get(pool.token0_id)) as Token_t;
@@ -452,7 +446,7 @@ Pool.Fees.handler(async ({ event, context }) => {
   context.Statistics.set(statistics);
 });
 
-Pool.Claim.handler(async ({ event, context }) => {
+CLPool.CollectFees.handler(async ({ event, context }) => {
   const poolId = getAddress(event.srcAddress);
   let pool = (await context.Pool.get(poolId)) as Pool_t;
   let token0 = (await context.Token.get(pool.token0_id)) as Token_t;
@@ -491,7 +485,7 @@ Pool.Claim.handler(async ({ event, context }) => {
 
   statistics = {
     ...statistics,
-    totalFeesUSD: statistics.totalFeesUSD.plus(amountUSD),
+    totalFeesUSD: statistics.totalFeesUSD.minus(amountUSD),
   };
   context.Statistics.set(statistics);
 });

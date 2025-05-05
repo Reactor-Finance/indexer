@@ -1,26 +1,26 @@
-import { Bundle, Burn, CLPool, Mint, Pool, Statistics, Swap } from 'generated';
+import { Burn, CLPool, Mint, Statistics, Swap } from 'generated';
 import { Pool_t, Statistics_t, Token_t } from 'generated/src/db/Entities.gen';
-import { getAddress, toHex, zeroAddress } from 'viem';
+import { getAddress, toHex } from 'viem';
 import { divideByBase } from '../../utils/math';
 import { loadBundlePrice, loadTokenPrices } from '../../utils/loaders';
 import {
-  createLiquidityPosition,
   updateOverallDayData,
   updatePoolDayData,
   updatePoolHourlyData,
   updateTokenDayData,
 } from '../../utils/mutations';
-import { ERC20 } from '../../utils/onchain/erc20';
-import { BD_ONE, BD_ZERO } from '../../utils/constants';
+import { BD_ZERO } from '../../utils/constants';
+import { deriveId } from '../../utils/misc';
 
 CLPool.Swap.handlerWithLoader({
   loader: async ({ event, context }) => {
-    const txId = event.transaction.hash;
+    const txId = deriveId(event.transaction.hash, event.chainId);
     const swaps = await context.Swap.getWhere.transaction_id.eq(txId);
     return { swaps };
   },
   handler: async ({ event, context, loaderReturn }) => {
-    const poolId = getAddress(event.srcAddress);
+    const poolAddress = getAddress(event.srcAddress);
+    const poolId = deriveId(poolAddress, event.chainId);
     let pool = await context.Pool.get(poolId);
 
     if (!pool) return; // Must pass
@@ -90,7 +90,8 @@ CLPool.Swap.handlerWithLoader({
 
     context.Token.set(token1);
     // Transaction
-    const txId = event.transaction.hash;
+    const hash = event.transaction.hash;
+    const txId = deriveId(hash, event.chainId);
     let transaction = await context.Transaction.get(txId);
 
     if (!transaction) {
@@ -98,13 +99,14 @@ CLPool.Swap.handlerWithLoader({
         id: txId,
         block: BigInt(event.block.number),
         timestamp: BigInt(event.block.timestamp),
+        hash,
       };
 
       context.Transaction.set(transaction);
     }
 
     const { swaps } = loaderReturn;
-    const swapId = txId + ':' + toHex(swaps.length);
+    const swapId = transaction.id + ':' + toHex(swaps.length);
     const swap: Swap = {
       id: swapId,
       transaction_id: transaction.id,
@@ -123,7 +125,7 @@ CLPool.Swap.handlerWithLoader({
 
     context.Swap.set(swap);
 
-    let statistics = (await context.Statistics.get('1')) as Statistics;
+    let statistics = (await context.Statistics.get(deriveId('1', event.chainId))) as Statistics;
     statistics = {
       ...statistics,
       txCount: statistics.txCount + 1n,
@@ -140,6 +142,7 @@ CLPool.Swap.handlerWithLoader({
       token1,
       amount0,
       amount1,
+      chainId: event.chainId,
     });
 
     // Update pool hourly data
@@ -170,14 +173,15 @@ CLPool.Swap.handlerWithLoader({
 
 CLPool.Mint.handlerWithLoader({
   loader: async ({ context, event }) => {
-    const txId = event.transaction.hash;
+    const txId = deriveId(event.transaction.hash, event.chainId);
     const mints = await context.Mint.getWhere.transaction_id.eq(txId);
     return { mints };
   },
   handler: async ({ event, context, loaderReturn }) => {
-    const poolId = getAddress(event.srcAddress);
+    const poolAddress = getAddress(event.srcAddress);
+    const poolId = deriveId(poolAddress, event.chainId);
     let pool = await context.Pool.get(poolId);
-    let statistics = await context.Statistics.get('1');
+    let statistics = await context.Statistics.get(deriveId('1', event.chainId));
 
     if (!pool || !statistics) return; // Must pass
 
@@ -227,7 +231,8 @@ CLPool.Mint.handlerWithLoader({
     context.Pool.set(pool);
 
     // Transaction
-    const txId = event.transaction.hash;
+    const hash = event.transaction.hash;
+    const txId = deriveId(hash, event.chainId);
     let transaction = await context.Transaction.get(txId);
 
     if (!transaction) {
@@ -235,6 +240,7 @@ CLPool.Mint.handlerWithLoader({
         id: txId,
         block: BigInt(event.block.number),
         timestamp: BigInt(event.block.timestamp),
+        hash,
       };
 
       context.Transaction.set(transaction);
@@ -267,6 +273,7 @@ CLPool.Mint.handlerWithLoader({
       token1,
       amount0,
       amount1,
+      chainId: event.chainId,
     });
 
     // Update pool hourly data
@@ -297,14 +304,15 @@ CLPool.Mint.handlerWithLoader({
 
 CLPool.Burn.handlerWithLoader({
   loader: async ({ event, context }) => {
-    const txId = event.transaction.hash;
+    const txId = deriveId(event.transaction.hash, event.chainId);
     const burns = await context.Burn.getWhere.transaction_id.eq(txId);
     return { burns };
   },
   handler: async ({ event, context, loaderReturn }) => {
-    const poolId = getAddress(event.srcAddress);
+    const poolAddress = getAddress(event.srcAddress);
+    const poolId = deriveId(poolAddress, event.chainId);
     let pool = (await context.Pool.get(poolId)) as Pool_t;
-    let statistics = (await context.Statistics.get('1')) as Statistics_t;
+    let statistics = (await context.Statistics.get(deriveId('1', event.chainId))) as Statistics_t;
     let token0 = (await context.Token.get(pool.token0_id)) as Token_t;
     let token1 = (await context.Token.get(pool.token1_id)) as Token_t;
 
@@ -349,7 +357,8 @@ CLPool.Burn.handlerWithLoader({
     context.Statistics.set(statistics);
 
     // Transaction
-    const txId = event.transaction.hash;
+    const hash = event.transaction.hash;
+    const txId = deriveId(hash, event.chainId);
     let transaction = await context.Transaction.get(txId);
 
     if (!transaction) {
@@ -357,13 +366,14 @@ CLPool.Burn.handlerWithLoader({
         id: txId,
         block: BigInt(event.block.number),
         timestamp: BigInt(event.block.timestamp),
+        hash,
       };
 
       context.Transaction.set(transaction);
     }
 
     const { burns } = loaderReturn;
-    const burnId = txId + ':' + toHex(burns.length);
+    const burnId = transaction.id + ':' + toHex(burns.length);
 
     const burn: Burn = {
       id: burnId,
@@ -390,6 +400,7 @@ CLPool.Burn.handlerWithLoader({
       token1,
       amount0: token0Amount,
       amount1: token1Amount,
+      chainId: event.chainId,
     });
 
     // Update pool hourly data
@@ -419,11 +430,11 @@ CLPool.Burn.handlerWithLoader({
 });
 
 // CLPool.Collect.handler(async ({ event, context }) => {
-//   const poolId = getAddress(event.srcAddress);
-//   let pool = (await context.Pool.get(poolId)) as Pool_t;
+//   const poolAddress = getAddress(event.srcAddress);
+//   let pool = (await context.Pool.get(poolAddress)) as Pool_t;
 //   let token0 = (await context.Token.get(pool.token0_id)) as Token_t;
 //   let token1 = (await context.Token.get(pool.token1_id)) as Token_t;
-//   let statistics = (await context.Statistics.get('1')) as Statistics_t;
+//   let statistics = (await context.Statistics.get(`1-${event.chainId}`)) as Statistics_t;
 
 //   token0 = await loadTokenPrices(context, token0, event.chainId);
 //   token1 = await loadTokenPrices(context, token1, event.chainId);
@@ -446,87 +457,87 @@ CLPool.Burn.handlerWithLoader({
 //   context.Statistics.set(statistics);
 // });
 
-CLPool.CollectFees.handler(async ({ event, context }) => {
-  const poolId = getAddress(event.srcAddress);
-  let pool = (await context.Pool.get(poolId)) as Pool_t;
-  let token0 = (await context.Token.get(pool.token0_id)) as Token_t;
-  let token1 = (await context.Token.get(pool.token1_id)) as Token_t;
-  let statistics = (await context.Statistics.get('1')) as Statistics_t;
+// CLPool.CollectFees.handler(async ({ event, context }) => {
+//   const poolAddress = getAddress(event.srcAddress);
+//   let pool = (await context.Pool.get(poolAddress)) as Pool_t;
+//   let token0 = (await context.Token.get(pool.token0_id)) as Token_t;
+//   let token1 = (await context.Token.get(pool.token1_id)) as Token_t;
+//   let statistics = (await context.Statistics.get(`1-${event.chainId}`)) as Statistics_t;
 
-  token0 = await loadTokenPrices(context, token0, event.chainId);
-  token1 = await loadTokenPrices(context, token1, event.chainId);
+//   token0 = await loadTokenPrices(context, token0, event.chainId);
+//   token1 = await loadTokenPrices(context, token1, event.chainId);
 
-  const amount0 = divideByBase(event.params.amount0, token0.decimals);
-  const amount1 = divideByBase(event.params.amount1, token1.decimals);
-  const amountUSD = amount0.times(token0.derivedUSD).plus(amount1.times(token1.derivedUSD));
-  const amountETH = amount0.times(token0.derivedETH).plus(amount1.times(token1.derivedETH));
+//   const amount0 = divideByBase(event.params.amount0, token0.decimals);
+//   const amount1 = divideByBase(event.params.amount1, token1.decimals);
+//   const amountUSD = amount0.times(token0.derivedUSD).plus(amount1.times(token1.derivedUSD));
+//   const amountETH = amount0.times(token0.derivedETH).plus(amount1.times(token1.derivedETH));
 
-  const gaugeFees0CurrentEpoch =
-    typeof pool.gauge_id !== 'undefined' && getAddress(event.params.recipient) === pool.gauge_id
-      ? pool.gaugeFees0CurrentEpoch.plus(amount0)
-      : pool.gaugeFees0CurrentEpoch;
-  const gaugeFees1CurrentEpoch =
-    typeof pool.gauge_id !== 'undefined' && getAddress(event.params.recipient) === pool.gauge_id
-      ? pool.gaugeFees1CurrentEpoch.plus(amount1)
-      : pool.gaugeFees1CurrentEpoch;
-  const gaugeFeesUSD =
-    typeof pool.gauge_id !== 'undefined' && getAddress(event.params.recipient) === pool.gauge_id
-      ? pool.gaugeFeesUSD.plus(amountUSD)
-      : pool.gaugeFeesUSD;
-  pool = {
-    ...pool,
-    reserve0: pool.reserve0.minus(amount0),
-    reserve1: pool.reserve1.minus(amount1),
-    reserveETH: pool.reserveETH.minus(amountETH),
-    reserveUSD: pool.reserveUSD.minus(amountUSD),
-    totalFees0: pool.totalFees0.minus(amount0),
-    totalFees1: pool.totalFees0.minus(amount1),
-    totalFeesUSD: pool.totalFeesUSD.minus(amountUSD),
-    gaugeFees0CurrentEpoch,
-    gaugeFees1CurrentEpoch,
-    gaugeFeesUSD,
-  };
-  context.Pool.set(pool);
+//   const gaugeFees0CurrentEpoch =
+//     typeof pool.gauge_id !== 'undefined' && getAddress(event.params.recipient) === pool.gauge_id
+//       ? pool.gaugeFees0CurrentEpoch.plus(amount0)
+//       : pool.gaugeFees0CurrentEpoch;
+//   const gaugeFees1CurrentEpoch =
+//     typeof pool.gauge_id !== 'undefined' && getAddress(event.params.recipient) === pool.gauge_id
+//       ? pool.gaugeFees1CurrentEpoch.plus(amount1)
+//       : pool.gaugeFees1CurrentEpoch;
+//   const gaugeFeesUSD =
+//     typeof pool.gauge_id !== 'undefined' && getAddress(event.params.recipient) === pool.gauge_id
+//       ? pool.gaugeFeesUSD.plus(amountUSD)
+//       : pool.gaugeFeesUSD;
+//   pool = {
+//     ...pool,
+//     reserve0: pool.reserve0.minus(amount0),
+//     reserve1: pool.reserve1.minus(amount1),
+//     reserveETH: pool.reserveETH.minus(amountETH),
+//     reserveUSD: pool.reserveUSD.minus(amountUSD),
+//     totalFees0: pool.totalFees0.minus(amount0),
+//     totalFees1: pool.totalFees0.minus(amount1),
+//     totalFeesUSD: pool.totalFeesUSD.minus(amountUSD),
+//     gaugeFees0CurrentEpoch,
+//     gaugeFees1CurrentEpoch,
+//     gaugeFeesUSD,
+//   };
+//   context.Pool.set(pool);
 
-  statistics = {
-    ...statistics,
-    totalFeesUSD: statistics.totalFeesUSD.minus(amountUSD),
-  };
-  context.Statistics.set(statistics);
+//   statistics = {
+//     ...statistics,
+//     totalFeesUSD: statistics.totalFeesUSD.minus(amountUSD),
+//   };
+//   context.Statistics.set(statistics);
 
-  // Update total data
-  updateOverallDayData(context, {
-    blockTimestamp: event.block.timestamp,
-    token0,
-    token1,
-    amount0,
-    amount1,
-  });
+//   // Update total data
+//   updateOverallDayData(context, {
+//     blockTimestamp: event.block.timestamp,
+//     token0,
+//     token1,
+//     amount0,
+//     amount1,
+//   });
 
-  // Update pool hourly data
-  updatePoolHourlyData(context, {
-    pool,
-    blockTimestamp: event.block.timestamp,
-    amount0,
-    amount1,
-    token0,
-    token1,
-  });
+//   // Update pool hourly data
+//   updatePoolHourlyData(context, {
+//     pool,
+//     blockTimestamp: event.block.timestamp,
+//     amount0,
+//     amount1,
+//     token0,
+//     token1,
+//   });
 
-  // Update pool day data
-  updatePoolDayData(context, {
-    blockTimestamp: event.block.timestamp,
-    pool,
-    token0,
-    token1,
-    amount0,
-    amount1,
-  });
+//   // Update pool day data
+//   updatePoolDayData(context, {
+//     blockTimestamp: event.block.timestamp,
+//     pool,
+//     token0,
+//     token1,
+//     amount0,
+//     amount1,
+//   });
 
-  // Update token day data
-  updateTokenDayData(context, { blockTimestamp: event.block.timestamp, token: token0, amount: amount0 });
-  updateTokenDayData(context, { blockTimestamp: event.block.timestamp, token: token1, amount: amount1 });
-});
+//   // Update token day data
+//   updateTokenDayData(context, { blockTimestamp: event.block.timestamp, token: token0, amount: amount0 });
+//   updateTokenDayData(context, { blockTimestamp: event.block.timestamp, token: token1, amount: amount1 });
+// });
 
 // Pool.Transfer.handlerWithLoader({
 //   loader: async ({ event, context }) => {
@@ -536,12 +547,12 @@ CLPool.CollectFees.handler(async ({ event, context }) => {
 //     return { mints, burns };
 //   },
 //   handler: async ({ event, context, loaderReturn }) => {
-//     const poolId = getAddress(event.srcAddress);
-//     let pool = await context.Pool.get(poolId);
+//     const poolAddress = getAddress(event.srcAddress);
+//     let pool = await context.Pool.get(poolAddress);
 
 //     if (!pool) return;
 
-//     const poolContract = ERC20.init(event.chainId, poolId);
+//     const poolContract = ERC20.init(event.chainId, poolAddress);
 //     const value = divideByBase(event.params.value, 18);
 //     const txId = event.transaction.hash;
 //     let transaction = await context.Transaction.get(txId);
@@ -588,7 +599,7 @@ CLPool.CollectFees.handler(async ({ event, context }) => {
 //       }
 //     }
 
-//     if (getAddress(event.params.to) === poolId) {
+//     if (getAddress(event.params.to) === poolAddress) {
 //       const burnId = txId + ':' + toHex(burns.length);
 //       const burn: Burn = {
 //         id: burnId,
@@ -611,7 +622,7 @@ CLPool.CollectFees.handler(async ({ event, context }) => {
 //       burns.push(burn);
 //     }
 
-//     if (isBurn && getAddress(event.params.from) === poolId) {
+//     if (isBurn && getAddress(event.params.from) === poolAddress) {
 //       mutablePool.totalSupply = mutablePool.totalSupply.minus(value);
 //       context.Pool.set(mutablePool);
 
@@ -668,14 +679,14 @@ CLPool.CollectFees.handler(async ({ event, context }) => {
 //       context.Burn.set(burn);
 //     }
 
-//     if (!isMint && getAddress(event.params.from) !== poolId) {
+//     if (!isMint && getAddress(event.params.from) !== poolAddress) {
 //       const address = getAddress(event.params.from);
 //       const balance = await poolContract.balanceOf(address);
 //       const amount = balance ? divideByBase(balance) : BD_ZERO;
 //       createLiquidityPosition(context, { address, pool, amount, blockNumber: event.block.number, txId });
 //     }
 
-//     if (!isBurn && getAddress(event.params.to) !== poolId) {
+//     if (!isBurn && getAddress(event.params.to) !== poolAddress) {
 //       const address = getAddress(event.params.to);
 //       const balance = await poolContract.balanceOf(address);
 //       const amount = balance ? divideByBase(balance) : BD_ZERO;

@@ -5,6 +5,7 @@ import { ERC20 } from './onchain/erc20';
 import { Bundle, handlerContext, Token } from 'generated';
 import { Oracle } from './onchain/oracle';
 import { divideByBase } from './math';
+import { deriveId } from './misc';
 
 export async function loadTokenDetails(address: string, chainId: number = Chains.MON_TESTNET) {
   try {
@@ -14,7 +15,7 @@ export async function loadTokenDetails(address: string, chainId: number = Chains
     const cache = Cache.init(CacheCategory.Token, chainId);
     const token = cache.read(viemCompliantAddress);
 
-    if (token) return { ...token, id: viemCompliantAddress };
+    if (token) return { ...token, id: deriveId(viemCompliantAddress, chainId) };
 
     // Bind contract
     const erc20Contract = ERC20.init(chainId, viemCompliantAddress);
@@ -32,7 +33,7 @@ export async function loadTokenDetails(address: string, chainId: number = Chains
         [viemCompliantAddress]: newTokenShape as any,
       });
 
-      return { ...newTokenShape, id: viemCompliantAddress };
+      return { ...newTokenShape, id: deriveId(viemCompliantAddress, chainId) };
     } else return null;
   } catch (error: any) {
     return null;
@@ -45,7 +46,7 @@ export async function loadTokenPrices(context: handlerContext, token: Token, cha
   // Token address checksumed
   const viemCompliantAddress = getAddress(token.address);
   // prices
-  const bundle = (await context.Bundle.get('1')) as Bundle;
+  const bundle = (await context.Bundle.get(deriveId('1', chainId))) as Bundle;
   const eth = await oracle.getPriceETH(viemCompliantAddress, token.decimals);
   // Mutate
   const newToken = {
@@ -63,7 +64,7 @@ export async function loadBundlePrice(context: handlerContext, chainId: Chains =
   // Token address checksumed
   const viemCompliantAddress = getAddress(WETH[chainId]);
   const usd = await oracle.getPriceUSD(viemCompliantAddress, 18);
-  let bundle = (await context.Bundle.get('1')) as Bundle;
+  let bundle = (await context.Bundle.get(deriveId('1', chainId))) as Bundle;
   bundle = { ...bundle, ethPrice: usd !== null ? divideByBase(usd) : bundle.ethPrice };
   context.Bundle.set(bundle);
   return context.Bundle.get(bundle.id) as Promise<Bundle>;

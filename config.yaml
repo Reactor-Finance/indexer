@@ -34,9 +34,29 @@ networks:
         events:
           - event: Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)
           - event: Mint(address sender, address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)
-          - event: CollectFees(address indexed recipient, uint128 amount0, uint128 amount1)
           - event: Collect(address indexed owner, address recipient, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount0, uint128 amount1)
           - event: Burn(address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)
+      - name: Voter
+        address:
+          - 0x38Fd3f88a46239D8CEcB768f8E7620d861D2DE13
+        handler: src/handlers/voting/Voter
+        events:
+          - event: GaugeCreated(address indexed poolFactory, address indexed votingRewardsFactory, address indexed gaugeFactory, address pool, address bribeVotingReward, address feeVotingReward, address gauge, address creator)
+          - event: GaugeKilled(address indexed gauge)
+          - event: GaugeRevived(address indexed gauge)
+          - event: Voted(address indexed voter, address indexed pool, uint256 indexed tokenId, uint256 weight, uint256 totalWeight, uint256 timestamp)
+      - name: Gauge
+        abi_file_path: abis/Gauge.json
+        handler: src/handlers/staking/Gauge
+        events:
+          - event: Withdraw(address indexed from, uint256 amount)
+          - event: Deposit(address indexed from, address indexed to, uint256 amount)
+      - name: VotingReward
+        abi_file_path: abis/VotingReward.json
+        handler: src/handlers/voting/VotingReward
+        events:
+          - event: ClaimRewards(address indexed from, address indexed reward, uint256 amount)
+          - event: NotifyReward(address indexed from, address indexed reward, uint256 indexed epoch, uint256 amount)
 unordered_multichain_mode: true
 field_selection:
   transaction_fields:

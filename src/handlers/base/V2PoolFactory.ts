@@ -4,6 +4,7 @@ import { loadTokenDetails } from '../../utils/loaders';
 import { BD_ZERO, BI_ZERO } from '../../utils/constants';
 import { Pool } from 'generated/src/Types.gen';
 import { ERC20 } from '../../utils/onchain/erc20';
+import { deriveId } from '../../utils/misc';
 
 PoolFactory.PoolCreated.contractRegister(
   ({ event, context }) => {
@@ -14,16 +15,16 @@ PoolFactory.PoolCreated.contractRegister(
 
 PoolFactory.PoolCreated.handler(async ({ event, context }) => {
   const id = getAddress(event.params.pool);
-  const token0Id = getAddress(event.params.token0);
-  const token1Id = getAddress(event.params.token1);
-  let token0 = await context.Token.get(token0Id);
-  let token1 = await context.Token.get(token1Id);
-  let statistics = await context.Statistics.get('1');
-  let bundle = await context.Bundle.get('1');
+  const token0Address = getAddress(event.params.token0);
+  const token1Address = getAddress(event.params.token1);
+  let token0 = await context.Token.get(deriveId(token0Address, event.chainId));
+  let token1 = await context.Token.get(deriveId(token1Address, event.chainId));
+  let statistics = await context.Statistics.get(deriveId('1', event.chainId));
+  let bundle = await context.Bundle.get(deriveId('1', event.chainId));
 
   if (!statistics) {
     statistics = {
-      id: '1',
+      id: deriveId('1', event.chainId),
       totalPairsCreated: 0n,
       totalVolumeLockedUSD: BD_ZERO,
       txCount: BI_ZERO,
@@ -37,15 +38,15 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
 
   if (!bundle) {
     bundle = {
-      id: '1',
+      id: deriveId('1', event.chainId),
       ethPrice: BD_ZERO,
     };
   }
 
   if (!token0) {
-    const _t = await loadTokenDetails(token0Id, event.chainId);
+    const _t = await loadTokenDetails(token0Address, event.chainId);
     if (!_t) {
-      context.log.error(`Could not fetch token details for ${token0Id}`);
+      context.log.error(`Could not fetch token details for ${token0Address}`);
       return; // Must pass
     }
     token0 = {
@@ -66,9 +67,9 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
   }
 
   if (!token1) {
-    const _t = await loadTokenDetails(token1Id, event.chainId);
+    const _t = await loadTokenDetails(token1Address, event.chainId);
     if (!_t) {
-      context.log.error(`Could not fetch token details for ${token1Id}`);
+      context.log.error(`Could not fetch token details for ${token1Address}`);
       return; // Must pass
     }
     token1 = {
@@ -97,8 +98,9 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
     return;
   }
   const pool: Pool = {
-    id,
+    id: deriveId(id, event.chainId),
     name,
+    address: id,
     token0_id: token0.id,
     token1_id: token1.id,
     createdAtBlockNumber: BigInt(event.block.number),
@@ -129,6 +131,7 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
     gauge_id: undefined,
     tickSpacing: undefined,
     liquidityManager: undefined,
+    chainId: event.chainId,
   };
 
   statistics = {

@@ -18,6 +18,7 @@ type Statistics {
 
 type Pool {
   id: ID!
+  address: Bytes! @index
   name: String!
   token0: Token!
   token1: Token!
@@ -50,9 +51,10 @@ type Pool {
   gaugeFees1CurrentEpoch: BigDecimal! @config(precision: 5, scale: 2)
   totalEmissions: BigDecimal! @config(precision: 5, scale: 2)
   totalEmissionsUSD: BigDecimal! @config(precision: 5, scale: 2)
-  gauge: Gauge
+  gauge: Gauge @index
   liquidityManager: Bytes
   tickSpacing: BigInt
+  chainId: Int! @index
 }
 
 type User {
@@ -60,26 +62,28 @@ type User {
   address: Bytes! @index
   gaugePositions: [GaugePosition!]! @derivedFrom(field: "account")
   lpPositions: [LiquidityPosition!]! @derivedFrom(field: "account")
+  lockPositions: [LockPosition!]! @derivedFrom(field: "owner")
 }
 
-type Gauge {
+type Gauge @index(fields: ["feeVotingReward", "bribeVotingReward"]) {
   id: ID!
   address: Bytes! @index
   depositPool: Pool! @index
   rewardToken: Token! @index
   totalSupply: BigDecimal! @config(precision: 5, scale: 2)
-  feeVotingReward: Bytes!
-  bribeVotingReward: Bytes!
+  feeVotingReward: Bytes! @index
+  bribeVotingReward: Bytes! @index
   rewardRate: BigDecimal! @config(precision: 5, scale: 2)
   fees0: BigDecimal! @config(precision: 5, scale: 2)
   fees1: BigDecimal! @config(precision: 5, scale: 2)
   isAlive: Boolean!
   emission: BigDecimal! @config(precision: 5, scale: 2)
+  chainId: Int! @index
 }
 
 type GaugePosition {
   id: ID!
-  gauge: Gauge!
+  gauge: Gauge! @index
   amountDeposited: BigDecimal! @config(precision: 5, scale: 2)
   account: User! @index
   creationTransaction: Bytes!
@@ -88,11 +92,20 @@ type GaugePosition {
 
 type LiquidityPosition {
   id: ID!
-  pool: Pool!
+  pool: Pool! @index
   account: User! @index
   position: BigDecimal! @config(precision: 5, scale: 2)
   creationBlock: BigInt!
   creationTransaction: Bytes!
+}
+
+type LockPosition {
+  id: ID!
+  position: BigDecimal! @config(precision: 5, scale: 2)
+  owner: User! @index
+  creationBlock: BigInt!
+  creationTransaction: Bytes!
+  chainId: Int! @index
 }
 
 type Token {
@@ -115,7 +128,8 @@ type Token {
 }
 
 type Transaction {
-  id: ID! # txn hash
+  id: ID!
+  hash: Bytes! @index
   block: BigInt!
   timestamp: BigInt!
   mints: [Mint!]! @derivedFrom(field: "transaction")
@@ -127,7 +141,7 @@ type Mint {
   id: ID!
   transaction: Transaction!
   timestamp: BigInt! # need this to pull recent txns for specific token or Pool
-  pool: Pool!
+  pool: Pool! @index
   to: Bytes!
   liquidity: BigDecimal! @config(precision: 5, scale: 2)
   sender: Bytes
@@ -143,7 +157,7 @@ type Burn {
   id: ID!
   transaction: Transaction!
   timestamp: BigInt! # need this to pull recent txns for specific token or Pool
-  pool: Pool!
+  pool: Pool! @index
   liquidity: BigDecimal! @config(precision: 5, scale: 2)
   sender: Bytes
   amount0: BigDecimal
@@ -160,7 +174,7 @@ type Swap {
   id: ID!
   transaction: Transaction!
   timestamp: BigInt! # need this to pull recent txns for specific token or Pool
-  pool: Pool!
+  pool: Pool! @index
   sender: Bytes!
   from: Bytes! # the EOA that initiated the txn
   amount0In: BigDecimal! @config(precision: 5, scale: 2)
@@ -188,12 +202,13 @@ type OverallDayData {
   feesUSD: BigDecimal! @config(precision: 5, scale: 2)
   totalTradeVolumeETH: BigDecimal! @config(precision: 5, scale: 2)
   totalTradeVolumeUSD: BigDecimal! @config(precision: 5, scale: 2)
+  chainId: Int! @index
 }
 
 type PoolHourData {
   id: ID!
   hourStartUnix: Int!
-  pool: Pool!
+  pool: Pool! @index
   reserve0: BigDecimal! @config(precision: 5, scale: 2)
   reserve1: BigDecimal! @config(precision: 5, scale: 2)
   totalSupply: BigDecimal! @config(precision: 5, scale: 2)
@@ -209,7 +224,7 @@ type PoolHourData {
 type PoolDayData {
   id: ID!
   date: Int!
-  pool: Pool!
+  pool: Pool! @index
   reserve0: BigDecimal! @config(precision: 5, scale: 2)
   reserve1: BigDecimal! @config(precision: 5, scale: 2)
   totalSupply: BigDecimal! @config(precision: 5, scale: 2)
@@ -225,7 +240,7 @@ type PoolDayData {
 type TokenDayData {
   id: ID!
   date: Int!
-  token: Token!
+  token: Token! @index
   dailyVolumeToken: BigDecimal! @config(precision: 5, scale: 2)
   dailyVolumeETH: BigDecimal! @config(precision: 5, scale: 2)
   dailyVolumeUSD: BigDecimal! @config(precision: 5, scale: 2)

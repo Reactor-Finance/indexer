@@ -10,6 +10,7 @@ import {
 import { Pool_t, Token_t } from 'generated/src/db/Entities.gen';
 import { toHex } from 'viem';
 import { BD_ZERO, BI_ZERO } from './constants';
+import { deriveId } from './misc';
 
 export async function updateOverallDayData(
   context: handlerContext,
@@ -19,16 +20,24 @@ export async function updateOverallDayData(
     token1,
     amount0,
     amount1,
-  }: { blockTimestamp: number; token0: Token_t; token1: Token_t; amount0: BigDecimal; amount1: BigDecimal },
+    chainId,
+  }: {
+    blockTimestamp: number;
+    token0: Token_t;
+    token1: Token_t;
+    amount0: BigDecimal;
+    amount1: BigDecimal;
+    chainId: number;
+  },
 ) {
   const dayDataId = toHex(Math.floor(blockTimestamp / 86400));
   const daystartT = parseInt(dayDataId) * 86400;
-  const statistics = (await context.Statistics.get('1')) as Statistics;
+  const statistics = (await context.Statistics.get(deriveId('1', chainId))) as Statistics;
   let overallDayData = await context.OverallDayData.get(dayDataId);
 
   if (!overallDayData) {
     overallDayData = {
-      id: dayDataId,
+      id: deriveId(dayDataId, chainId),
       date: daystartT,
       volumeETH: BD_ZERO,
       volumeUSD: BD_ZERO,
@@ -38,6 +47,7 @@ export async function updateOverallDayData(
       feesUSD: BD_ZERO,
       totalTradeVolumeETH: BD_ZERO,
       totalTradeVolumeUSD: BD_ZERO,
+      chainId,
     };
   }
 
@@ -93,7 +103,7 @@ export async function updatePoolHourlyData(
 
   if (!poolHourData) {
     poolHourData = {
-      id: poolHourDataId,
+      id: deriveId(poolHourDataId, pool.chainId),
       reserve0: BD_ZERO,
       reserve1: BD_ZERO,
       totalSupply: BD_ZERO,
@@ -152,7 +162,7 @@ export async function updatePoolDayData(
 
   if (!poolDayData) {
     poolDayData = {
-      id: dayDataId,
+      id: deriveId(dayDataId, pool.chainId),
       date: daystartT,
       reserve0: BD_ZERO,
       reserve1: BD_ZERO,
@@ -210,7 +220,7 @@ export async function updateTokenDayData(
 
   if (!tokenDayData) {
     tokenDayData = {
-      id: dayDataId,
+      id: deriveId(dayDataId, token.chainId),
       date: daystartT,
       token_id: token.id,
       dailyVolumeToken: BD_ZERO,
@@ -256,11 +266,11 @@ export async function createLiquidityPosition(
     txId,
   }: { pool: Pool_t; address: string; amount: BigDecimal; blockNumber: number; txId: string },
 ) {
-  let user = await context.User.get(address);
+  let user = await context.User.get(deriveId(address, pool.chainId));
 
   if (!user) {
     user = {
-      id: address,
+      id: deriveId(address, pool.chainId),
       address,
     };
     context.User.set(user);

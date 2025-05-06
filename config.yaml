@@ -51,6 +51,16 @@ networks:
         events:
           - event: Withdraw(address indexed from, uint256 amount)
           - event: Deposit(address indexed from, address indexed to, uint256 amount)
+          - event: NotifyReward(address indexed from, uint256 amount)
+          - event: ClaimRewards(address indexed from, uint256 amount)
+      - name: CLGauge
+        abi_file_path: abis/CLGauge.json
+        handler: src/handlers/staking/CLGauge
+        events:
+          - event: Deposit(address indexed user, uint256 indexed tokenId, uint128 indexed liquidityToStake)
+          - event: Withdraw(address indexed user, uint256 indexed tokenId, uint128 indexed liquidityToStake)
+          - event: NotifyReward(address indexed from, uint256 amount)
+          - event: ClaimRewards(address indexed from, uint256 amount)
       - name: VotingReward
         abi_file_path: abis/VotingReward.json
         handler: src/handlers/voting/VotingReward

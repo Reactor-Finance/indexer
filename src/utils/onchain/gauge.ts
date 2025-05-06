@@ -33,4 +33,13 @@ export class Gauge {
       return null;
     }
   }
+
+  async rewardRate() {
+    try {
+      const rate = await this.contract.read.rewardRate();
+      return rate;
+    } catch (error: any) {
+      return BI_ZERO;
+    }
+  }
 }

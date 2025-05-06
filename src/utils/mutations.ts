@@ -7,7 +7,7 @@ import {
   Statistics,
   TokenDayData,
 } from 'generated';
-import { Pool_t, Token_t } from 'generated/src/db/Entities.gen';
+import { Gauge_t, Pool_t, Token_t, User_t } from 'generated/src/db/Entities.gen';
 import { toHex } from 'viem';
 import { BD_ZERO, BI_ZERO } from './constants';
 import { deriveId } from './misc';
@@ -266,17 +266,18 @@ export async function createLiquidityPosition(
     txId,
   }: { pool: Pool_t; address: string; amount: BigDecimal; blockNumber: number; txId: string },
 ) {
-  let user = await context.User.get(deriveId(address, pool.chainId));
+  const userId = deriveId(address, pool.chainId);
+  let user = await context.User.get(userId);
 
   if (!user) {
     user = {
-      id: deriveId(address, pool.chainId),
+      id: userId,
       address,
     };
     context.User.set(user);
   }
 
-  const lpPositionId = user.id + ':' + pool.id;
+  const lpPositionId = deriveId(user.id + ':' + pool.id, pool.chainId);
   let lpPosition = await context.LiquidityPosition.get(lpPositionId);
 
   if (!lpPosition) {
@@ -292,4 +293,32 @@ export async function createLiquidityPosition(
 
   lpPosition = { ...lpPosition, position: amount };
   context.LiquidityPosition.set(lpPosition);
+}
+
+export async function createGaugePosition(
+  context: handlerContext,
+  {
+    user,
+    gauge,
+    amount,
+    txId,
+    blockNumber,
+  }: { user: User_t; amount: BigDecimal; gauge: Gauge_t; txId: string; blockNumber: number },
+) {
+  const gaugePositionId = deriveId(user.id + ':' + gauge.id, gauge.chainId);
+  let gaugePosition = await context.GaugePosition.get(gaugePositionId);
+
+  if (!gaugePosition) {
+    gaugePosition = {
+      id: gaugePositionId,
+      gauge_id: gauge.id,
+      account_id: user.id,
+      amountDeposited: BD_ZERO,
+      creationBlock: BigInt(blockNumber),
+      creationTransaction: txId,
+    };
+  }
+
+  gaugePosition = { ...gaugePosition, amountDeposited: gaugePosition.amountDeposited.plus(amount) };
+  context.GaugePosition.set(gaugePosition);
 }

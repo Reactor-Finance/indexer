@@ -123,7 +123,7 @@ VotingReward.ClaimRewards.handlerWithLoader({
 
     const amount = divideByBase(event.params.amount, token.decimals);
     const amountUSD = amount.times(token.derivedUSD);
-    const amountETH = amount.times(token.derivedETH);
+    // const amountETH = amount.times(token.derivedETH);
 
     if (isFee) {
       const isToken0 = token.id === pool.token0_id;

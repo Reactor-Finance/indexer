@@ -1,5 +1,6 @@
 import { Voter } from 'generated';
 import { Gauge_t, Pool_t } from 'generated/src/db/Entities.gen';
+import { getGeneratedByChainId } from 'generated/src/ConfigYAML.gen';
 import { getAddress } from 'viem';
 import { BD_ZERO, BI_ZERO } from '../../utils/constants';
 import { Gauge as OnchainGauge } from '../../utils/onchain/gauge';
@@ -8,7 +9,13 @@ import { deriveId } from '../../utils/misc';
 
 Voter.GaugeCreated.contractRegister(
   ({ event, context }) => {
-    context.addGauge(event.params.gauge);
+    const configuration = getGeneratedByChainId(event.chainId);
+    const v2PoolFactories = configuration.contracts.PoolFactory.addresses.map((address) => address.toLowerCase());
+    if (v2PoolFactories.includes(event.params.poolFactory.toLowerCase())) {
+      context.addGauge(event.params.gauge);
+    } else {
+      context.addCLGauge(event.params.gauge);
+    }
     context.addVotingReward(event.params.feeVotingReward);
     context.addVotingReward(event.params.bribeVotingReward);
   },

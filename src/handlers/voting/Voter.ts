@@ -1,0 +1,108 @@
+import { Voter } from 'generated';
+import { Gauge_t, Pool_t } from 'generated/src/db/Entities.gen';
+import { getGeneratedByChainId } from 'generated/src/ConfigYAML.gen';
+import { getAddress } from 'viem';
+import { BD_ZERO, BI_ZERO, NFT_MANAGERS } from '../../utils/constants';
+import { Gauge as OnchainGauge } from '../../utils/onchain/gauge';
+import { loadTokenDetails } from '../../utils/loaders';
+import { deriveId } from '../../utils/misc';
+
+Voter.GaugeCreated.contractRegister(
+  ({ event, context }) => {
+    const configuration = getGeneratedByChainId(event.chainId);
+    const v2PoolFactories = configuration.contracts.PoolFactory.addresses.map((address) => address.toLowerCase());
+    if (v2PoolFactories.includes(event.params.poolFactory.toLowerCase())) {
+      context.addGauge(event.params.gauge);
+    } else {
+      context.addCLGauge(event.params.gauge);
+    }
+    context.addVotingReward(event.params.feeVotingReward);
+    context.addVotingReward(event.params.bribeVotingReward);
+  },
+  { preRegisterDynamicContracts: true },
+);
+
+Voter.GaugeCreated.handlerWithLoader({
+  loader: async ({ event, context }) => {
+    const configuration = getGeneratedByChainId(event.chainId);
+    const v2PoolFactories = configuration.contracts.PoolFactory.addresses.map((address) => address.toLowerCase());
+    const isCLGauge = v2PoolFactories.includes(event.params.poolFactory.toLowerCase());
+    const liquidityManager = isCLGauge ? NFT_MANAGERS[event.chainId] : undefined;
+    const poolAddress = getAddress(event.params.pool);
+    const poolId = deriveId(poolAddress, event.chainId);
+    const pool = (await context.Pool.get(poolId)) as Pool_t;
+    return { pool, liquidityManager };
+  },
+  handler: async ({ event, context, loaderReturn }) => {
+    let { pool, liquidityManager } = loaderReturn;
+    const gaugeAddress = getAddress(event.params.gauge);
+    const gaugeId = deriveId(gaugeAddress, event.chainId);
+    let rewardToken = await OnchainGauge.init(event.chainId, gaugeAddress).rewardToken();
+    if (!rewardToken) return;
+    rewardToken = getAddress(rewardToken);
+    const tokenId = deriveId(rewardToken, event.chainId);
+    let token = await context.Token.get(tokenId);
+
+    if (!token) {
+      const _t = await loadTokenDetails(rewardToken, event.chainId);
+      if (!_t) {
+        context.log.error(`Could not fetch token details for ${rewardToken}`);
+        return; // Must pass
+      }
+      token = {
+        ..._t,
+        chainId: event.chainId,
+        address: _t.id,
+        derivedETH: BD_ZERO,
+        derivedUSD: BD_ZERO,
+        totalLiquidity: BD_ZERO,
+        totalLiquidityUSD: BD_ZERO,
+        txCount: BI_ZERO,
+        tradeVolume: BD_ZERO,
+        tradeVolumeUSD: BD_ZERO,
+        totalLiquidityETH: BD_ZERO,
+      };
+
+      context.Token.set(token);
+    }
+
+    const gauge: Gauge_t = {
+      id: gaugeId,
+      isAlive: true,
+      depositPool_id: pool.id,
+      address: gaugeId,
+      bribeVotingReward: event.params.bribeVotingReward,
+      feeVotingReward: event.params.feeVotingReward,
+      emission: BD_ZERO,
+      fees0: BD_ZERO,
+      fees1: BD_ZERO,
+      rewardRate: BD_ZERO,
+      rewardToken_id: token.id,
+      totalSupply: BD_ZERO,
+      chainId: event.chainId,
+    };
+
+    context.Gauge.set(gauge);
+
+    pool = { ...pool, gauge_id: gauge.id, liquidityManager };
+    context.Pool.set(pool);
+  },
+});
+
+Voter.GaugeKilled.handler(async ({ context, event }) => {
+  const gaugeAddress = getAddress(event.params.gauge);
+  const gaugeId = deriveId(gaugeAddress, event.chainId);
+  let gauge = await context.Gauge.get(gaugeId);
+  if (!gauge) return; // Gauge must exist
+  gauge = { ...gauge, isAlive: false };
+  context.Gauge.set(gauge);
+});
+
+Voter.GaugeRevived.handler(async ({ context, event }) => {
+  const gaugeAddress = getAddress(event.params.gauge);
+  const gaugeId = deriveId(gaugeAddress, event.chainId);
+  let gauge = await context.Gauge.get(gaugeId);
+  if (!gauge) return; // Gauge must exist
+  gauge = { ...gauge, isAlive: true };
+  context.Gauge.set(gauge);
+});

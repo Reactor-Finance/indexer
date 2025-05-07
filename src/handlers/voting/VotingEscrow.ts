@@ -59,6 +59,20 @@ VotingEscrow.Deposit.handlerWithLoader({
   },
 });
 
+VotingEscrow.Withdraw.handlerWithLoader({
+  loader: async ({ event, context }) => {
+    const lockId = deriveId(event.params.tokenId.toString(), event.chainId);
+    const lock = (await context.LockPosition.get(lockId)) as LockPosition_t;
+    return { lock };
+  },
+  handler: async ({ event, context, loaderReturn }) => {
+    let { lock } = loaderReturn;
+    const amount = divideByBase(event.params.value);
+    lock = { ...lock, position: lock.position.minus(amount) };
+    context.LockPosition.set(lock);
+  },
+});
+
 VotingEscrow.DepositManaged.handlerWithLoader({
   loader: async ({ event, context }) => {
     const lockId = deriveId(event.params._tokenId.toString(), event.chainId);

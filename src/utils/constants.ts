@@ -26,3 +26,8 @@ export const ORACLES: { [key in Chains]: `0x${string}` } = {
 export const WETH: { [key in Chains]: `0x${string}` } = {
   [Chains.MON_TESTNET]: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701',
 };
+
+// NFT managers
+export const NFT_MANAGERS: { [key in Chains]: `0x${string}` } = {
+  [Chains.MON_TESTNET]: '0x126FAbb0D937788ab903eC931397b888bF792613',
+};

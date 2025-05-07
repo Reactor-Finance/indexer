@@ -2,7 +2,7 @@ import { Voter } from 'generated';
 import { Gauge_t, Pool_t } from 'generated/src/db/Entities.gen';
 import { getGeneratedByChainId } from 'generated/src/ConfigYAML.gen';
 import { getAddress } from 'viem';
-import { BD_ZERO, BI_ZERO } from '../../utils/constants';
+import { BD_ZERO, BI_ZERO, NFT_MANAGERS } from '../../utils/constants';
 import { Gauge as OnchainGauge } from '../../utils/onchain/gauge';
 import { loadTokenDetails } from '../../utils/loaders';
 import { deriveId } from '../../utils/misc';
@@ -24,13 +24,17 @@ Voter.GaugeCreated.contractRegister(
 
 Voter.GaugeCreated.handlerWithLoader({
   loader: async ({ event, context }) => {
+    const configuration = getGeneratedByChainId(event.chainId);
+    const v2PoolFactories = configuration.contracts.PoolFactory.addresses.map((address) => address.toLowerCase());
+    const isCLGauge = v2PoolFactories.includes(event.params.poolFactory.toLowerCase());
+    const liquidityManager = isCLGauge ? NFT_MANAGERS[event.chainId] : undefined;
     const poolAddress = getAddress(event.params.pool);
     const poolId = deriveId(poolAddress, event.chainId);
     const pool = (await context.Pool.get(poolId)) as Pool_t;
-    return { pool };
+    return { pool, liquidityManager };
   },
   handler: async ({ event, context, loaderReturn }) => {
-    let { pool } = loaderReturn;
+    let { pool, liquidityManager } = loaderReturn;
     const gaugeAddress = getAddress(event.params.gauge);
     const gaugeId = deriveId(gaugeAddress, event.chainId);
     let rewardToken = await OnchainGauge.init(event.chainId, gaugeAddress).rewardToken();
@@ -80,7 +84,7 @@ Voter.GaugeCreated.handlerWithLoader({
 
     context.Gauge.set(gauge);
 
-    pool = { ...pool, gauge_id: gauge.id };
+    pool = { ...pool, gauge_id: gauge.id, liquidityManager };
     context.Pool.set(pool);
   },
 });

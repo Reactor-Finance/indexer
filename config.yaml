@@ -7,7 +7,7 @@ networks:
       - name: PoolFactory
         abi_file_path: abis/V2PoolFactory.json
         address:
-          - 0x22595aA7f5298b49D62450DA6300882Fb3d98eBc
+          - 0x307644f7520b10a8Ee83263913C5ba35449C8C42
         handler: src/handlers/base/V2PoolFactory
         events:
           - event: PoolCreated(address indexed token0, address indexed token1, bool indexed stable, address pool, uint256)
@@ -24,7 +24,7 @@ networks:
           - event: Claim(address indexed sender, address indexed recipient, uint256 amount0, uint256 amount1)
       - name: CLFactory
         address:
-          - 0x38Fd3f88a46239D8CEcB768f8E7620d861D2DE13
+          - 0x5f302730D6bebD717D30b49D0be3CED60591Cb3e
         handler: src/handlers/base/CLFactory
         events:
           - event: PoolCreated(address indexed token0, address indexed token1, int24 indexed tickSpacing, address pool)
@@ -39,7 +39,7 @@ networks:
       - name: Voter
         abi_file_path: abis/Voter.json
         address:
-          - 0x38Fd3f88a46239D8CEcB768f8E7620d861D2DE13
+          - 0x27f590c0a918C6fCDAD16A752578530B04b8cEf4
         handler: src/handlers/voting/Voter
         events:
           - event: GaugeCreated(address indexed poolFactory, address indexed votingRewardsFactory, address indexed gaugeFactory, address pool, address bribeVotingReward, address feeVotingReward, address gauge, address creator)
@@ -71,7 +71,7 @@ networks:
       - name: VotingEscrow
         abi_file_path: abis/VotingEscrow.json
         address:
-          - 0x38Fd3f88a46239D8CEcB768f8E7620d861D2DE13
+          - 0x9d916dB6d5E160D955617a8279e3d1655f7154F5
         handler: src/handlers/voting/VotingEscrow
         events:
           - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)

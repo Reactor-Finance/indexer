@@ -5,15 +5,15 @@ networks:
     start_block: 0
     contracts:
       - name: PoolFactory
-        abi_file_path: abis/V2PoolFactory.json
+        abi_file_path: ./abis/V2PoolFactory.json
         address:
           - 0x307644f7520b10a8Ee83263913C5ba35449C8C42
-        handler: src/handlers/base/V2PoolFactory
+        handler: ./src/handlers/base/V2PoolFactory
         events:
           - event: PoolCreated(address indexed token0, address indexed token1, bool indexed stable, address pool, uint256)
       - name: Pool
-        abi_file_path: abis/V2Pool.json
-        handler: src/handlers/core/V2Pools
+        abi_file_path: ./abis/V2Pool.json
+        handler: ./src/handlers/core/V2Pools
         events:
           - event: Swap(address indexed sender,address indexed to,uint256 amount0In,uint256 amount1In,uint256 amount0Out,uint256 amount1Out)
           - event: Sync(uint256 reserve0, uint256 reserve1)
@@ -25,54 +25,54 @@ networks:
       - name: CLFactory
         address:
           - 0x5f302730D6bebD717D30b49D0be3CED60591Cb3e
-        handler: src/handlers/base/CLFactory
+        handler: ./src/handlers/base/CLFactory
         events:
           - event: PoolCreated(address indexed token0, address indexed token1, int24 indexed tickSpacing, address pool)
       - name: CLPool
-        abi_file_path: abis/V3Pool.json
-        handler: src/handlers/core/V3Pools
+        abi_file_path: ./abis/V3Pool.json
+        handler: ./src/handlers/core/V3Pools
         events:
           - event: Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)
           - event: Mint(address sender, address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)
           - event: Collect(address indexed owner, address recipient, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount0, uint128 amount1)
           - event: Burn(address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)
       - name: Voter
-        abi_file_path: abis/Voter.json
+        abi_file_path: ./abis/Voter.json
         address:
           - 0x27f590c0a918C6fCDAD16A752578530B04b8cEf4
-        handler: src/handlers/voting/Voter
+        handler: ./src/handlers/voting/Voter
         events:
           - event: GaugeCreated(address indexed poolFactory, address indexed votingRewardsFactory, address indexed gaugeFactory, address pool, address bribeVotingReward, address feeVotingReward, address gauge, address creator)
           - event: GaugeKilled(address indexed gauge)
           - event: GaugeRevived(address indexed gauge)
           - event: Voted(address indexed voter, address indexed pool, uint256 indexed tokenId, uint256 weight, uint256 totalWeight, uint256 timestamp)
       - name: Gauge
-        abi_file_path: abis/Gauge.json
-        handler: src/handlers/staking/Gauge
+        abi_file_path: ./abis/Gauge.json
+        handler: ./src/handlers/staking/Gauge
         events:
           - event: Withdraw(address indexed from, uint256 amount)
           - event: Deposit(address indexed from, address indexed to, uint256 amount)
           - event: NotifyReward(address indexed from, uint256 amount)
           - event: ClaimRewards(address indexed from, uint256 amount)
       - name: CLGauge
-        abi_file_path: abis/CLGauge.json
-        handler: src/handlers/staking/CLGauge
+        abi_file_path: ./abis/CLGauge.json
+        handler: ./src/handlers/staking/CLGauge
         events:
           - event: Deposit(address indexed user, uint256 indexed tokenId, uint128 indexed liquidityToStake)
           - event: Withdraw(address indexed user, uint256 indexed tokenId, uint128 indexed liquidityToStake)
           - event: NotifyReward(address indexed from, uint256 amount)
           - event: ClaimRewards(address indexed from, uint256 amount)
       - name: VotingReward
-        abi_file_path: abis/VotingReward.json
-        handler: src/handlers/voting/VotingReward
+        abi_file_path: ./abis/VotingReward.json
+        handler: ./src/handlers/voting/VotingReward
         events:
           - event: ClaimRewards(address indexed from, address indexed reward, uint256 amount)
           - event: NotifyReward(address indexed from, address indexed reward, uint256 indexed epoch, uint256 amount)
       - name: VotingEscrow
-        abi_file_path: abis/VotingEscrow.json
+        abi_file_path: ./abis/VotingEscrow.json
         address:
           - 0x9d916dB6d5E160D955617a8279e3d1655f7154F5
-        handler: src/handlers/voting/VotingEscrow
+        handler: ./src/handlers/voting/VotingEscrow
         events:
           - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
           - event: Deposit(address indexed provider, uint256 indexed tokenId, uint8 indexed depositType, uint256 value, uint256 locktime, uint256 ts)

@@ -4,6 +4,11 @@ enum PoolType {
   CONCENTRATED
 }
 
+enum LockType {
+  MANAGED
+  NORMAL
+}
+
 type Statistics {
   id: ID!
   txCount: BigInt!
@@ -106,6 +111,12 @@ type LockPosition {
   creationBlock: BigInt!
   creationTransaction: Bytes!
   chainId: Int! @index
+  lockId: BigInt! @index
+  lockType: LockType!
+  permanent: Boolean!
+  lockRewardManager: Bytes @index
+  freeRewardManager: Bytes @index
+  unlockTime: BigInt!
 }
 
 type Token {

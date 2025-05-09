@@ -75,7 +75,7 @@ CLFactory.PoolCreated.handler(async ({ event, context }) => {
     token1 = {
       ..._t,
       chainId: event.chainId,
-      address: token0Address,
+      address: token1Address,
       derivedETH: BD_ZERO,
       derivedUSD: BD_ZERO,
       totalLiquidity: BD_ZERO,

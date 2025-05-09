@@ -52,7 +52,7 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
     token0 = {
       ..._t,
       chainId: event.chainId,
-      address: _t.id,
+      address: token0Address,
       derivedETH: BD_ZERO,
       derivedUSD: BD_ZERO,
       totalLiquidity: BD_ZERO,
@@ -75,7 +75,7 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
     token1 = {
       ..._t,
       chainId: event.chainId,
-      address: _t.id,
+      address: token1Address,
       derivedETH: BD_ZERO,
       derivedUSD: BD_ZERO,
       totalLiquidity: BD_ZERO,

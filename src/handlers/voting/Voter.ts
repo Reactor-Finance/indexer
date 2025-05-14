@@ -1,11 +1,12 @@
-import { Voter } from 'generated';
-import { Gauge_t, Pool_t } from 'generated/src/db/Entities.gen';
+import { LockPosition, Voter } from 'generated';
+import { Gauge_t, LockPosition_t, Pool_t } from 'generated/src/db/Entities.gen';
 import { getGeneratedByChainId } from 'generated/src/ConfigYAML.gen';
 import { getAddress } from 'viem';
 import { BD_ZERO, BI_ZERO, NFT_MANAGERS } from '../../utils/constants';
 import { Gauge as OnchainGauge } from '../../utils/onchain/gauge';
 import { loadTokenDetails } from '../../utils/loaders';
 import { deriveId } from '../../utils/misc';
+import { divideByBase } from '../../utils/math';
 
 Voter.GaugeCreated.contractRegister(
   ({ event, context }) => {
@@ -105,4 +106,23 @@ Voter.GaugeRevived.handler(async ({ context, event }) => {
   if (!gauge) return; // Gauge must exist
   gauge = { ...gauge, isAlive: true };
   context.Gauge.set(gauge);
+});
+
+Voter.Voted.handlerWithLoader({
+  loader: async ({ event, context }) => {
+    const lockId = deriveId(event.params.tokenId.toString(), event.chainId);
+    const poolAddress = getAddress(event.params.pool);
+    const poolId = deriveId(poolAddress, event.chainId);
+    const lock = (await context.LockPosition.get(lockId)) as LockPosition_t;
+    const pool = (await context.Pool.get(poolId)) as Pool_t;
+    return { lock, pool };
+  },
+  handler: async ({ event, context, loaderReturn }) => {
+    let { lock, pool } = loaderReturn;
+    const weight = divideByBase(event.params.weight);
+    pool = { ...pool, totalVotes: pool.totalVotes.plus(weight) };
+    lock = { ...lock, totalVoteWeightGiven: lock.totalVoteWeightGiven.plus(weight) };
+    context.Pool.set(pool);
+    context.LockPosition.set(lock);
+  },
 });

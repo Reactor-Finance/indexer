@@ -117,6 +117,7 @@ type LockPosition {
   lockRewardManager: Bytes @index
   freeRewardManager: Bytes @index
   unlockTime: BigInt!
+  totalVoteWeightGiven: BigDecimal! @config(precision: 500, scale: 3)
 }
 
 type Token {

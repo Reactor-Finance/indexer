@@ -8,6 +8,8 @@ export enum Chains {
 // Bigints
 export const BI_ONE = BigInt(1);
 export const BI_ZERO = BigInt(0);
+export const LOCK_MAX_TIME = BigInt(2 * 365 * 86400);
+export const WEEK = BigInt(7 * 86400);
 
 // Bigdecimals
 export const BD_ONE = new BigDecimal('1');

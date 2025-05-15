@@ -9,6 +9,12 @@ enum LockType {
   NORMAL
 }
 
+enum LPManagementProvider {
+  GAMMA
+  ICHI
+  STEER
+}
+
 type Statistics {
   id: ID!
   txCount: BigInt!
@@ -57,7 +63,7 @@ type Pool {
   totalEmissions: BigDecimal! @config(precision: 500, scale: 3)
   totalEmissionsUSD: BigDecimal! @config(precision: 500, scale: 3)
   gauge: Gauge @index
-  liquidityManager: Bytes
+  liquidityManager: [LiquidityManager!]! @derivedFrom(field: "pool")
   tickSpacing: BigInt
   chainId: Int! @index
 }
@@ -102,6 +108,7 @@ type LiquidityPosition {
   position: BigDecimal! @config(precision: 500, scale: 3)
   creationBlock: BigInt!
   creationTransaction: Bytes!
+  clPositionTokenId: BigInt @index
 }
 
 type LockPosition {
@@ -262,4 +269,19 @@ type TokenDayData {
   totalLiquidityUSD: BigDecimal! @config(precision: 500, scale: 3)
   priceUSD: BigDecimal! @config(precision: 500, scale: 3)
   priceETH: BigDecimal! @config(precision: 500, scale: 3)
+}
+
+type LiquidityManager {
+  id: ID!
+  address: Bytes! @index
+  name: String!
+  provider: LPManagementProvider! @index
+  pool: Pool! @index
+}
+
+# Temporary tracker to match NFPM tokenIds to a pool
+type NFPMLPChangeTracker {
+  id: ID!
+  transaction: Bytes!
+  pool: Pool! # We need this to track which pool liquidity changed
 }

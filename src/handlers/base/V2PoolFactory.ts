@@ -130,7 +130,6 @@ PoolFactory.PoolCreated.handler(async ({ event, context }) => {
     volumeETH: BD_ZERO,
     gauge_id: undefined,
     tickSpacing: undefined,
-    liquidityManager: undefined,
     chainId: event.chainId,
   };
 

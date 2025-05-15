@@ -84,6 +84,15 @@ networks:
           - event: CreateManaged(address indexed _to, uint256 indexed _mTokenId, address indexed _from, address _lockedManagedReward, address _freeManagedReward)
           - event: DepositManaged(address indexed _owner, uint256 indexed _tokenId, uint256 indexed _mTokenId, uint256 _weight, uint256 _ts)
           - event: WithdrawManaged(address indexed _owner, uint256 indexed _tokenId, uint256 indexed _mTokenId, uint256 _weight, uint256 _ts)
+      - name: NonfungiblePositionManager
+        abi_file_path: ./abis/NFPM.json
+        address:
+          - 0x126FAbb0D937788ab903eC931397b888bF792613
+        handler: ./src/handlers/base/NFPM
+        events:
+          - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+          - event: IncreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1)
+          - event: DecreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1)
 unordered_multichain_mode: true
 field_selection:
   transaction_fields:

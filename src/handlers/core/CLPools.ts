@@ -265,6 +265,12 @@ CLPool.Mint.handlerWithLoader({
     };
 
     context.Mint.set(mint);
+    // Tracker
+    context.NFPMLPChangeTracker.set({
+      id: txId,
+      transaction: hash,
+      pool_id: pool.id,
+    });
 
     // Update total data
     updateOverallDayData(context, {

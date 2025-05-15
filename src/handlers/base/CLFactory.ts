@@ -131,7 +131,6 @@ CLFactory.PoolCreated.handler(async ({ event, context }) => {
     volumeETH: BD_ZERO,
     gauge_id: undefined,
     tickSpacing: event.params.tickSpacing,
-    liquidityManager: undefined,
     chainId: event.chainId,
   };
 

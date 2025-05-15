@@ -25,17 +25,13 @@ Voter.GaugeCreated.contractRegister(
 
 Voter.GaugeCreated.handlerWithLoader({
   loader: async ({ event, context }) => {
-    const configuration = getGeneratedByChainId(event.chainId);
-    const v2PoolFactories = configuration.contracts.PoolFactory.addresses.map((address) => address.toLowerCase());
-    const isCLGauge = v2PoolFactories.includes(event.params.poolFactory.toLowerCase());
-    const liquidityManager = isCLGauge ? NFT_MANAGERS[event.chainId] : undefined;
     const poolAddress = getAddress(event.params.pool);
     const poolId = deriveId(poolAddress, event.chainId);
     const pool = (await context.Pool.get(poolId)) as Pool_t;
-    return { pool, liquidityManager };
+    return { pool };
   },
   handler: async ({ event, context, loaderReturn }) => {
-    let { pool, liquidityManager } = loaderReturn;
+    let { pool } = loaderReturn;
     const gaugeAddress = getAddress(event.params.gauge);
     const gaugeId = deriveId(gaugeAddress, event.chainId);
     let rewardToken = await OnchainGauge.init(event.chainId, gaugeAddress).rewardToken();
@@ -85,7 +81,7 @@ Voter.GaugeCreated.handlerWithLoader({
 
     context.Gauge.set(gauge);
 
-    pool = { ...pool, gauge_id: gauge.id, liquidityManager };
+    pool = { ...pool, gauge_id: gauge.id };
     context.Pool.set(pool);
   },
 });

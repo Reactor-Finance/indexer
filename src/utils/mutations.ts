@@ -264,7 +264,8 @@ export async function createLiquidityPosition(
     amount,
     blockNumber,
     txId,
-  }: { pool: Pool_t; address: string; amount: BigDecimal; blockNumber: number; txId: string },
+    clTokenId,
+  }: { pool: Pool_t; address: string; amount: BigDecimal; blockNumber: number; txId: string; clTokenId?: bigint },
 ) {
   const userId = deriveId(address, pool.chainId);
   let user = await context.User.get(userId);
@@ -288,6 +289,7 @@ export async function createLiquidityPosition(
       position: BD_ZERO,
       creationBlock: BigInt(blockNumber),
       creationTransaction: txId,
+      clPositionTokenId: clTokenId,
     };
   }
 

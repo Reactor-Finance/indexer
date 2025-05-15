@@ -645,7 +645,7 @@ Pool.Transfer.handlerWithLoader({
       const address = getAddress(event.params.from);
       const balance = await poolContract.balanceOf(address);
       const amount = balance ? divideByBase(balance) : BD_ZERO;
-      createLiquidityPosition(context, {
+      await createLiquidityPosition(context, {
         address,
         pool,
         amount,
@@ -658,7 +658,7 @@ Pool.Transfer.handlerWithLoader({
       const address = getAddress(event.params.to);
       const balance = await poolContract.balanceOf(address);
       const amount = balance ? divideByBase(balance) : BD_ZERO;
-      createLiquidityPosition(context, {
+      await createLiquidityPosition(context, {
         address,
         pool,
         amount,

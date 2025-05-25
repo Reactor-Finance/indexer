@@ -89,18 +89,9 @@ CLFactory.PoolCreated.handler(async ({ event, context }) => {
     context.Token.set(token1);
   }
 
-  // Bind pool contract
-  const poolContract = ERC20.init(event.chainId, getAddress(id));
-  // Fetch pool name
-  const name = await poolContract.name();
-  // Must pass
-  if (!name) {
-    context.log.error(`Could not fetch token name for ${id}`);
-    return;
-  }
   const pool: Pool = {
     id: deriveId(id, event.chainId),
-    name,
+    name: `Concentrated AMM - ${token0.symbol}/${token1.symbol}`,
     address: id,
     token0_id: token0.id,
     token1_id: token1.id,

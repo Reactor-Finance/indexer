@@ -183,7 +183,10 @@ CLPool.Mint.handlerWithLoader({
     let pool = await context.Pool.get(poolId);
     let statistics = await context.Statistics.get(deriveId('1', event.chainId));
 
-    if (!pool || !statistics) return; // Must pass
+    if (!pool || !statistics) {
+      context.log.warn("Pool & stats not found");
+      return;
+    } // Must pass
 
     // Load ETH price first
     await loadBundlePrice(context, event.chainId);

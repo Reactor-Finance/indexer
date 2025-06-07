@@ -15,7 +15,10 @@ NonfungiblePositionManager.Transfer.handler(async ({ event, context }) => {
   const isMintOrTransfer = recipient !== zeroAddress;
 
   if (isMintOrTransfer) {
-    const lpPositionId = deriveId(deriveId(recipient, event.chainId) + ':' + pool.id, event.chainId);
+    const lpPositionId = deriveId(
+      deriveId(recipient, event.chainId) + ':' + pool.id + ':' + event.params.tokenId,
+      event.chainId,
+    );
     const lpPosition = await context.LiquidityPosition.get(lpPositionId);
     if (!lpPosition)
       await createLiquidityPosition(context, {

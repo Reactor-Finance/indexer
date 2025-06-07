@@ -28,6 +28,7 @@ NonfungiblePositionManager.Transfer.handler(async ({ event, context }) => {
         txId: trackedTxId,
         clTokenId: event.params.tokenId,
         address: recipient,
+        positionId: lpPositionId,
       });
   }
 

@@ -265,7 +265,16 @@ export async function createLiquidityPosition(
     blockNumber,
     txId,
     clTokenId,
-  }: { pool: Pool_t; address: string; amount: BigDecimal; blockNumber: number; txId: string; clTokenId?: bigint },
+    positionId,
+  }: {
+    pool: Pool_t;
+    address: string;
+    amount: BigDecimal;
+    blockNumber: number;
+    txId: string;
+    clTokenId?: bigint;
+    positionId?: string;
+  },
 ) {
   const userId = deriveId(address, pool.chainId);
   let user = await context.User.get(userId);
@@ -278,7 +287,7 @@ export async function createLiquidityPosition(
     context.User.set(user);
   }
 
-  const lpPositionId = deriveId(user.id + ':' + pool.id, pool.chainId);
+  const lpPositionId = positionId ? positionId : deriveId(user.id + ':' + pool.id, pool.chainId);
   let lpPosition = await context.LiquidityPosition.get(lpPositionId);
 
   if (!lpPosition) {

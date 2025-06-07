@@ -49,19 +49,12 @@ NonfungiblePositionManager.IncreaseLiquidity.handlerWithLoader({
     return { lpPosition: lpPositions[lpPositions.length - 1] };
   },
   handler: async ({ event, context, loaderReturn }) => {
-    const { lpPosition } = loaderReturn;
-    const pool = (await context.Pool.get(lpPosition.pool_id)) as Pool_t;
-    const user = (await context.User.get(lpPosition.account_id)) as User_t;
+    let { lpPosition } = loaderReturn;
     const amount = divideByBase(event.params.liquidity);
     const trackedTxId = deriveId(event.transaction.hash, event.chainId);
 
-    await createLiquidityPosition(context, {
-      pool,
-      amount: lpPosition.position.plus(amount),
-      blockNumber: Number(lpPosition.creationBlock),
-      txId: trackedTxId,
-      address: user.address,
-    });
+    lpPosition = { ...lpPosition, position: lpPosition.position.plus(amount) };
+    context.LiquidityPosition.set(lpPosition); // Update position
     context.NFPMLPChangeTracker.deleteUnsafe(trackedTxId); // Delete at this point
   },
 });

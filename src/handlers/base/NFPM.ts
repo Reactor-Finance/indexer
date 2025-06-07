@@ -65,18 +65,9 @@ NonfungiblePositionManager.DecreaseLiquidity.handlerWithLoader({
     return { lpPosition: lpPositions[lpPositions.length - 1] };
   },
   handler: async ({ event, context, loaderReturn }) => {
-    const { lpPosition } = loaderReturn;
-    const pool = (await context.Pool.get(lpPosition.pool_id)) as Pool_t;
-    const user = (await context.User.get(lpPosition.account_id)) as User_t;
+    let { lpPosition } = loaderReturn;
     const amount = divideByBase(event.params.liquidity);
-    const trackedTxId = deriveId(event.transaction.hash, event.chainId);
-
-    await createLiquidityPosition(context, {
-      pool,
-      amount: lpPosition.position.minus(amount),
-      blockNumber: Number(lpPosition.creationBlock),
-      txId: trackedTxId,
-      address: user.address,
-    });
+    lpPosition = { ...lpPosition, position: lpPosition.position.minus(amount) };
+    context.LiquidityPosition.set(lpPosition);
   },
 });

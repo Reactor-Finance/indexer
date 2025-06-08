@@ -70,6 +70,28 @@ CLPool.Swap.handlerWithLoader({
       reserveUSD,
     };
 
+    if (!pool.reserve1.isZero())
+      pool = {
+        ...pool,
+        token0Price: pool.reserve0.dividedBy(pool.reserve1),
+      };
+    else
+      pool = {
+        ...pool,
+        token0Price: BD_ZERO,
+      };
+
+    if (!pool.reserve0.isZero())
+      pool = {
+        ...pool,
+        token1Price: pool.reserve1.dividedBy(pool.reserve0),
+      };
+    else
+      pool = {
+        ...pool,
+        token1Price: BD_ZERO,
+      };
+
     context.Pool.set(pool);
 
     token0 = {
@@ -231,6 +253,27 @@ CLPool.Mint.handlerWithLoader({
     const reserveETH = pool.reserveETH.plus(reserve0.times(token0.derivedETH)).plus(reserve1.times(token1.derivedETH));
     const totalSupply = pool.totalSupply.plus(liquidity);
     pool = { ...pool, txCount: pool.txCount + 1n, reserve0, reserve1, reserveETH, reserveUSD, totalSupply };
+    if (!pool.reserve1.isZero())
+      pool = {
+        ...pool,
+        token0Price: pool.reserve0.dividedBy(pool.reserve1),
+      };
+    else
+      pool = {
+        ...pool,
+        token0Price: BD_ZERO,
+      };
+
+    if (!pool.reserve0.isZero())
+      pool = {
+        ...pool,
+        token1Price: pool.reserve1.dividedBy(pool.reserve0),
+      };
+    else
+      pool = {
+        ...pool,
+        token1Price: BD_ZERO,
+      };
     context.Pool.set(pool);
 
     // Transaction
@@ -359,6 +402,28 @@ CLPool.Burn.handlerWithLoader({
       totalVolumeLockedUSD: statistics.totalVolumeLockedUSD.minus(amountTotalUSD),
     };
     pool = { ...pool, txCount: pool.txCount + 1n, reserve0, reserve1, reserveETH, reserveUSD, totalSupply };
+
+    if (!pool.reserve1.isZero())
+      pool = {
+        ...pool,
+        token0Price: pool.reserve0.dividedBy(pool.reserve1),
+      };
+    else
+      pool = {
+        ...pool,
+        token0Price: BD_ZERO,
+      };
+
+    if (!pool.reserve0.isZero())
+      pool = {
+        ...pool,
+        token1Price: pool.reserve1.dividedBy(pool.reserve0),
+      };
+    else
+      pool = {
+        ...pool,
+        token1Price: BD_ZERO,
+      };
 
     context.Token.set(token0);
     context.Token.set(token1);

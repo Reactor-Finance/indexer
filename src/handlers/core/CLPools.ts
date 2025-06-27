@@ -206,7 +206,7 @@ CLPool.Mint.handlerWithLoader({
     let statistics = await context.Statistics.get(deriveId('1', event.chainId));
 
     if (!pool || !statistics) {
-      context.log.info(`${poolId} Pool`);
+      // context.log.info(`${poolId} Pool`);
       return;
     } // Must pass
 

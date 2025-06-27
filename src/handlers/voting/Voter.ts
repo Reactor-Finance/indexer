@@ -1,8 +1,8 @@
-import { LockPosition, Voter } from 'generated';
+import { Voter } from 'generated';
 import { Gauge_t, LockPosition_t, Pool_t } from 'generated/src/db/Entities.gen';
 import { getGeneratedByChainId } from 'generated/src/ConfigYAML.gen';
 import { getAddress } from 'viem';
-import { BD_ZERO, BI_ZERO, NFT_MANAGERS } from '../../utils/constants';
+import { BD_ZERO, BI_ZERO } from '../../utils/constants';
 import { Gauge as OnchainGauge } from '../../utils/onchain/gauge';
 import { loadTokenDetails } from '../../utils/loaders';
 import { deriveId } from '../../utils/misc';
@@ -67,7 +67,7 @@ Voter.GaugeCreated.handlerWithLoader({
       id: gaugeId,
       isAlive: true,
       depositPool_id: pool.id,
-      address: gaugeId,
+      address: gaugeAddress,
       bribeVotingReward: event.params.bribeVotingReward,
       feeVotingReward: event.params.feeVotingReward,
       emission: BD_ZERO,

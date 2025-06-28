@@ -20,7 +20,7 @@ NonfungiblePositionManager.Transfer.handlerWithLoader({
   handler: async ({ event, context, loaderReturn }) => {
     const recipient = getAddress(event.params.to);
     let poolId: string;
-    const { mintTracker, gauge, mintTrackerId, existentLP } = loaderReturn;
+    let { mintTracker, gauge, mintTrackerId, existentLP } = loaderReturn;
 
     if (mintTracker) poolId = mintTracker.pool_id;
     else if (gauge) poolId = gauge.depositPool_id;
@@ -35,8 +35,7 @@ NonfungiblePositionManager.Transfer.handlerWithLoader({
     );
 
     if (isMintOrTransfer) {
-      let lpPosition = await context.LiquidityPosition.get(lpPositionId);
-      if (!lpPosition && !gauge)
+      if (!existentLP && !gauge)
         await createLiquidityPosition(context, {
           pool,
           amount: BD_ZERO,
@@ -46,9 +45,9 @@ NonfungiblePositionManager.Transfer.handlerWithLoader({
           address: recipient,
           positionId: lpPositionId,
         });
-      else if (lpPosition && !gauge) {
-        lpPosition = { ...lpPosition, account_id: deriveId(recipient, event.chainId) };
-        context.LiquidityPosition.set(lpPosition);
+      else if (existentLP && !gauge) {
+        existentLP = { ...existentLP, account_id: deriveId(recipient, event.chainId) };
+        context.LiquidityPosition.set(existentLP);
       }
     } else context.LiquidityPosition.deleteUnsafe(lpPositionId);
 

@@ -385,7 +385,7 @@
         "type": "address"
       }
     ],
-    "name": "isPair",
+    "name": "isPool",
     "outputs": [
       {
         "internalType": "bool",

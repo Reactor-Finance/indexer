@@ -21,12 +21,12 @@ export const RPC_URLS: { [key in Chains]: string } = {
 
 // Oracles
 export const ORACLES: { [key in Chains]: `0x${string}` } = {
-  [Chains.MON_TESTNET]: '0xf9e1b7c5c7830fc5aa4370c9286cbb4dd74b6b62',
+  [Chains.MON_TESTNET]: '0x621185acfc40204a6223b5d7696ebb9bcae6d7b1',
 };
 
 // NFPM
 export const NFP: { [key in Chains]: `0x${string}` } = {
-  [Chains.MON_TESTNET]: '0x126FAbb0D937788ab903eC931397b888bF792613',
+  [Chains.MON_TESTNET]: '0xFa6E328201670537CB7B0d05F26921B8233F4B8b',
 };
 
 // WETH
@@ -36,5 +36,5 @@ export const WETH: { [key in Chains]: `0x${string}` } = {
 
 // NFT managers
 export const NFT_MANAGERS: { [key in Chains]: `0x${string}` } = {
-  [Chains.MON_TESTNET]: '0x126FAbb0D937788ab903eC931397b888bF792613',
+  [Chains.MON_TESTNET]: '0xFa6E328201670537CB7B0d05F26921B8233F4B8b',
 };

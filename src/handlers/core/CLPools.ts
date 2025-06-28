@@ -312,7 +312,7 @@ CLPool.Mint.handlerWithLoader({
 
     context.Mint.set(mint);
     // Tracker
-    context.NFPMLPChangeTracker.set({
+    context.NFPMLPMintTracker.set({
       id: txId,
       transaction: hash,
       pool_id: pool.id,

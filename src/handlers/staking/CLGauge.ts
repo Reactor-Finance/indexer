@@ -30,7 +30,7 @@ CLGauge.Deposit.handlerWithLoader({
     const amount = divideByBase(event.params.liquidityToStake);
     gauge = { ...gauge, totalSupply: gauge.totalSupply.plus(amount) };
     context.Gauge.set(gauge);
-    createGaugePosition(context, {
+    await createGaugePosition(context, {
       user,
       gauge,
       txId: event.transaction.hash,

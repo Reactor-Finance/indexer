@@ -279,9 +279,9 @@ type LiquidityManager {
   pool: Pool! @index
 }
 
-# Temporary tracker to match NFPM tokenIds to a pool
-type NFPMLPChangeTracker {
+# Temporary tracker to match NFPM token ids to a pool
+type NFPMLPMintTracker {
   id: ID!
-  transaction: Bytes!
+  transaction: Bytes! # Position mint would be executed on the same transaction as pool mint
   pool: Pool! # We need this to track which pool liquidity changed
 }

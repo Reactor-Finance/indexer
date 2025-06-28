@@ -30,7 +30,7 @@ Gauge.Deposit.handlerWithLoader({
     const amount = divideByBase(event.params.amount);
     gauge = { ...gauge, totalSupply: gauge.totalSupply.plus(amount) };
     context.Gauge.set(gauge);
-    createGaugePosition(context, {
+    await createGaugePosition(context, {
       user,
       gauge,
       txId: event.transaction.hash,
@@ -55,7 +55,7 @@ Gauge.Withdraw.handlerWithLoader({
     gauge = { ...gauge, totalSupply: gauge.totalSupply.minus(amount) };
     context.Gauge.set(gauge);
     amount = amount.negated();
-    createGaugePosition(context, {
+    await createGaugePosition(context, {
       user,
       gauge,
       txId: event.transaction.hash,

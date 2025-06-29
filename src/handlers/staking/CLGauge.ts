@@ -9,11 +9,12 @@ import { Gauge as OnchainGauge } from '../../utils/onchain/gauge';
 CLGauge.Deposit.handlerWithLoader({
   loader: async ({ event, context }) => {
     const gaugeId = deriveId(getAddress(event.srcAddress), event.chainId);
-    const gauge = (await context.Gauge.get(gaugeId)) as Gauge_t;
+    const gauge = await context.Gauge.get(gaugeId);
     return { gauge };
   },
   handler: async ({ event, context, loaderReturn }) => {
     let { gauge } = loaderReturn;
+    if (!gauge) return;
     const userAddress = getAddress(event.params.user);
     const depositorId = deriveId(userAddress, event.chainId);
     let user = await context.User.get(depositorId);
@@ -43,11 +44,12 @@ CLGauge.Deposit.handlerWithLoader({
 CLGauge.Withdraw.handlerWithLoader({
   loader: async ({ event, context }) => {
     const gaugeId = deriveId(getAddress(event.srcAddress), event.chainId);
-    const gauge = (await context.Gauge.get(gaugeId)) as Gauge_t;
+    const gauge = await context.Gauge.get(gaugeId);
     return { gauge };
   },
   handler: async ({ event, context, loaderReturn }) => {
     let { gauge } = loaderReturn;
+    if (!gauge) return;
     const userAddress = getAddress(event.params.user);
     const withdrawerId = deriveId(userAddress, event.chainId);
     const user = (await context.User.get(withdrawerId)) as User_t;

@@ -27,11 +27,12 @@ Voter.GaugeCreated.handlerWithLoader({
   loader: async ({ event, context }) => {
     const poolAddress = getAddress(event.params.pool);
     const poolId = deriveId(poolAddress, event.chainId);
-    const pool = (await context.Pool.get(poolId)) as Pool_t;
+    const pool = await context.Pool.get(poolId);
     return { pool };
   },
   handler: async ({ event, context, loaderReturn }) => {
     let { pool } = loaderReturn;
+    if (!pool) return;
     const gaugeAddress = getAddress(event.params.gauge);
     const gaugeId = deriveId(gaugeAddress, event.chainId);
     let rewardToken = await OnchainGauge.init(event.chainId, gaugeAddress).rewardToken();

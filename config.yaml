@@ -24,7 +24,7 @@ networks:
           - event: Claim(address indexed sender, address indexed recipient, uint256 amount0, uint256 amount1)
       - name: CLFactory
         address:
-          - 0x71A4642578EB137128A885cB9799f5967417fA24
+          - 0x9dCfC5ff64216901BbFf6E9B7103c294c2f517F0
         handler: ./src/handlers/base/CLFactory
         events:
           - event: PoolCreated(address indexed token0, address indexed token1, int24 indexed tickSpacing, address pool)
@@ -87,7 +87,7 @@ networks:
       - name: NonfungiblePositionManager
         abi_file_path: ./abis/NFPM.json
         address:
-          - 0xFa6E328201670537CB7B0d05F26921B8233F4B8b
+          - 0x9005d55830ebc54e964f530C8cf42228592e3943
         handler: ./src/handlers/base/NFPM
         events:
           - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)

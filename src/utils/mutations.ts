@@ -156,8 +156,9 @@ export async function updatePoolDayData(
     amount1: BigDecimal;
   },
 ) {
-  const dayDataId = toHex(Math.floor(blockTimestamp / 86400));
-  const daystartT = parseInt(dayDataId) * 86400;
+  const dayFloor = Math.floor(blockTimestamp / 86400);
+  const dayDataId = toHex(dayFloor) + ':' + pool.id;
+  const daystartT = dayFloor * 86400;
   let poolDayData = await context.PoolDayData.get(dayDataId);
 
   if (!poolDayData) {
@@ -214,8 +215,9 @@ export async function updateTokenDayData(
     amount: BigDecimal;
   },
 ) {
-  const dayDataId = toHex(Math.floor(blockTimestamp / 86400));
-  const daystartT = parseInt(dayDataId) * 86400;
+  const dayFloor = Math.floor(blockTimestamp / 86400);
+  const dayDataId = toHex(dayFloor) + ':' + token.id;
+  const daystartT = dayFloor * 86400;
   let tokenDayData = await context.TokenDayData.get(dayDataId);
 
   if (!tokenDayData) {

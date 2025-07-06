@@ -50,7 +50,7 @@ Voter.GaugeCreated.handlerWithLoader({
       token = {
         ..._t,
         chainId: event.chainId,
-        address: _t.id,
+        address: rewardToken,
         derivedETH: BD_ZERO,
         derivedUSD: BD_ZERO,
         totalLiquidity: BD_ZERO,

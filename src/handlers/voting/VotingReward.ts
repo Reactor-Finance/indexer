@@ -21,11 +21,12 @@ VotingReward.NotifyReward.handlerWithLoader({
     if (!gauge) return; // Gauge must not be undefined
     // Find pool associated with gauge
     let pool = (await context.Pool.get(gauge.depositPool_id)) as Pool_t;
-    const tokenId = deriveId(event.params.reward, event.chainId);
+    const tokenAddress = getAddress(event.params.reward);
+    const tokenId = deriveId(tokenAddress, event.chainId);
     let token = await context.Token.get(tokenId);
 
     if (!token) {
-      const _t = await loadTokenDetails(event.params.reward, event.chainId);
+      const _t = await loadTokenDetails(tokenAddress, event.chainId);
       if (!_t) {
         context.log.error(`Could not fetch token details for ${event.params.reward}`);
         return; // Must pass
@@ -33,7 +34,7 @@ VotingReward.NotifyReward.handlerWithLoader({
       token = {
         ..._t,
         chainId: event.chainId,
-        address: _t.id,
+        address: tokenAddress,
         derivedETH: BD_ZERO,
         derivedUSD: BD_ZERO,
         totalLiquidity: BD_ZERO,

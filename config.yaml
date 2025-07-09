@@ -7,7 +7,7 @@ networks:
       - name: PoolFactory
         abi_file_path: ./abis/V2PoolFactory.json
         address:
-          - 0x307644f7520b10a8Ee83263913C5ba35449C8C42
+          - 0x6dFdF83AFfD62E4BF55dB0BF4bd816e3ccaCb963
         handler: ./src/handlers/base/V2PoolFactory
         events:
           - event: PoolCreated(address indexed token0, address indexed token1, bool indexed stable, address pool, uint256)
@@ -24,7 +24,7 @@ networks:
           - event: Claim(address indexed sender, address indexed recipient, uint256 amount0, uint256 amount1)
       - name: CLFactory
         address:
-          - 0x9dCfC5ff64216901BbFf6E9B7103c294c2f517F0
+          - 0xebd565DbDeaFff470aeE844bD0F84210c5D26c9E
         handler: ./src/handlers/base/CLFactory
         events:
           - event: PoolCreated(address indexed token0, address indexed token1, int24 indexed tickSpacing, address pool)
@@ -39,7 +39,7 @@ networks:
       - name: Voter
         abi_file_path: ./abis/Voter.json
         address:
-          - 0x27f590c0a918C6fCDAD16A752578530B04b8cEf4
+          - 0xc31d18ba3a85CAe6031549fC59E522Cfc59Ba7e0
         handler: ./src/handlers/voting/Voter
         events:
           - event: GaugeCreated(address indexed poolFactory, address indexed votingRewardsFactory, address indexed gaugeFactory, address pool, address bribeVotingReward, address feeVotingReward, address gauge, address creator)
@@ -71,7 +71,7 @@ networks:
       - name: VotingEscrow
         abi_file_path: ./abis/VotingEscrow.json
         address:
-          - 0x9d916dB6d5E160D955617a8279e3d1655f7154F5
+          - 0xc645D50D0868a68a75c8cA81dCA6A6c2361309B3
         handler: ./src/handlers/voting/VotingEscrow
         events:
           - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
@@ -87,7 +87,7 @@ networks:
       - name: NonfungiblePositionManager
         abi_file_path: ./abis/NFPM.json
         address:
-          - 0x9005d55830ebc54e964f530C8cf42228592e3943
+          - 0x2a4440dF3351Bac4e7cb8b1D12E07f004aBc3372
         handler: ./src/handlers/base/NFPM
         events:
           - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
